@@ -1258,18 +1258,20 @@ body {
             body.innerHTML = html || '<p>No details available.</p>';
 
             // Add use button for consumable items
-            if (item.type && item.type.toLowerCase().includes('consumable') ||
-                item.type && (item.type.toLowerCase().includes('potion') || item.type.toLowerCase().includes('scroll'))) {
-                const useBtn = document.createElement('button');
-                useBtn.className = 'btn btn-primary';
-                useBtn.style.width = '100%';
-                useBtn.style.marginTop = '1rem';
-                useBtn.textContent = 'Use Item';
-                useBtn.onclick = () => {
-                    useItem(index);
-                    modal.classList.add('hidden');
-                };
-                body.appendChild(useBtn);
+            if (item.type) {
+                const itemType = item.type.toLowerCase();
+                if (itemType.includes('consumable') || itemType.includes('potion') || itemType.includes('scroll')) {
+                    const useBtn = document.createElement('button');
+                    useBtn.className = 'btn btn-primary';
+                    useBtn.style.width = '100%';
+                    useBtn.style.marginTop = '1rem';
+                    useBtn.textContent = 'Use Item';
+                    useBtn.onclick = () => {
+                        useItem(index);
+                        modal.classList.add('hidden');
+                    };
+                    body.appendChild(useBtn);
+                }
             }
 
             modal.classList.remove('hidden');
