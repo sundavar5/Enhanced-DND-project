@@ -703,6 +703,12 @@ body {
                     <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">Quests</h3>
                     <div id="questList"></div>
                 </div>
+
+                <!-- SECTION 10 (UI PART): Roll History panel -->
+                <div class="card">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">Roll History</h3>
+                    <div id="rollHistoryList"></div>
+                </div>
             </div>
 
             <!-- Right Column: World / Combat / Log -->
@@ -731,6 +737,8 @@ body {
 
                     <div class="flex gap-2 flex-wrap mb-4">
                         <button id="rollD20Btn" class="btn btn-secondary">🎲 Roll D20</button>
+                        <button id="rollAdvBtn" class="btn btn-secondary" style="background-color: var(--green-500);">↗️ Advantage</button>
+                        <button id="rollDisBtn" class="btn btn-secondary" style="background-color: var(--red-500);">↘️ Disadvantage</button>
                         <button id="perceptionBtn" class="btn btn-secondary">Perception Check</button>
                     </div>
 
@@ -751,6 +759,17 @@ body {
                 <button id="itemModalClose" class="modal-close">×</button>
             </div>
             <div id="itemModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Quest Modal -->
+    <div id="questModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="questModalTitle" style="font-size: 1.25rem; font-weight: bold;"></h3>
+                <button id="questModalClose" class="modal-close">×</button>
+            </div>
+            <div id="questModalBody"></div>
         </div>
     </div>
 
@@ -782,7 +801,8 @@ body {
             adventurePreferences: null,
             messages: [],
             hasOpening: false,
-            quests: [] // SECTION 9: quest list
+            quests: [], // SECTION 9: quest list
+            rollHistory: [] // SECTION 10: dice roll history
         };
 
         function safeParse(json) {
@@ -822,6 +842,9 @@ body {
 
             const savedQuests = localStorage.getItem('dnd_quests');
             if (savedQuests) gameData.quests = safeParse(savedQuests) || gameData.quests;
+
+            const savedRolls = localStorage.getItem('dnd_roll_history');
+            if (savedRolls) gameData.rollHistory = safeParse(savedRolls) || gameData.rollHistory;
         }
 
         function persistGame() {
@@ -831,6 +854,7 @@ body {
             localStorage.setItem('dnd_game_state', JSON.stringify(gameData.gameState));
             localStorage.setItem('dnd_messages', JSON.stringify(gameData.messages));
             localStorage.setItem('dnd_quests', JSON.stringify(gameData.quests || []));
+            localStorage.setItem('dnd_roll_history', JSON.stringify(gameData.rollHistory || []));
         }
 
         // =====================================================================
@@ -843,7 +867,7 @@ body {
 
         function parseFormattedText(text) {
             if (!text) return text;
-            
+
             // Bold italic
             text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<span class="text-bold text-italic">$1</span>');
             // Bold
@@ -852,6 +876,12 @@ body {
             text = text.replace(/\*(.*?)\*/g, '<span class="text-italic">$1</span>');
             // Underline
             text = text.replace(/__(.*?)__/g, '<span class="text-underline">$1</span>');
+            // Strikethrough
+            text = text.replace(/~~(.*?)~~/g, '<span style="text-decoration: line-through;">$1</span>');
+            // Spoiler (hidden until hover)
+            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span style="background-color: var(--slate-400); color: var(--slate-400); cursor: pointer;" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'var(--slate-400)\'">$1</span>');
+            // Highlight
+            text = text.replace(/\[highlight\](.*?)\[\/highlight\]/g, '<span style="background-color: rgba(250, 204, 21, 0.3); padding: 0.125rem 0.25rem; border-radius: 0.25rem;">$1</span>');
             // Colors
             text = text.replace(/\[red\](.*?)\[\/red\]/g, '<span class="color-red">$1</span>');
             text = text.replace(/\[blue\](.*?)\[\/blue\]/g, '<span class="color-blue">$1</span>');
@@ -861,7 +891,7 @@ body {
             text = text.replace(/\[orange\](.*?)\[\/orange\]/g, '<span class="color-orange">$1</span>');
             text = text.replace(/\[white\](.*?)\[\/white\]/g, '<span class="color-white">$1</span>');
             text = text.replace(/\[gray\](.*?)\[\/gray\]/g, '<span class="color-gray">$1</span>');
-            
+
             return text;
         }
 
@@ -932,8 +962,22 @@ body {
             // Passive Perception (Wisdom-based)
             const wis = char.stats.wisdom || 10;
             const passive = 10 + getModifier(wis);
+
+            // Proficiency Bonus (based on level)
+            const proficiency = Math.ceil(char.level / 4) + 1;
+
+            // Initiative (DEX-based)
+            const dex = char.stats.dexterity || 10;
+            const initiative = getModifier(dex);
+
             const passiveEl = document.getElementById('passivePerception');
-            passiveEl.textContent = `Passive Perception: ${passive}`;
+            passiveEl.innerHTML = `
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <span>Passive Perception: ${passive}</span>
+                    <span>Proficiency: +${proficiency}</span>
+                    <span>Initiative: ${initiative >= 0 ? '+' + initiative : initiative}</span>
+                </div>
+            `;
 
             // SECTION 8: Currency + inventory rendering
             const currencyDisplay = document.getElementById('currencyDisplay');
@@ -1001,14 +1045,14 @@ body {
                 return;
             }
 
-            questListEl.innerHTML = quests.map(q => {
+            questListEl.innerHTML = quests.map((q, index) => {
                 const status = (q.status || 'active').toLowerCase();
                 let color = 'var(--yellow-400)';
                 if (status === 'completed') color = 'var(--green-400)';
                 if (status === 'failed') color = 'var(--red-400)';
 
                 return `
-                    <div class="quest-item">
+                    <div class="quest-item" style="cursor: pointer;" onclick="showQuestModal(${index})">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
                             <span style="font-weight:500;">${q.title || 'Quest'}</span>
                             <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:${color};">
@@ -1016,6 +1060,102 @@ body {
                             </span>
                         </div>
                         ${q.summary ? `<p style="font-size:0.8rem;color:var(--slate-300);">${q.summary}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showQuestModal(index) {
+            const quests = gameData.quests || [];
+            if (!quests[index]) return;
+            const quest = quests[index];
+
+            const modal = document.getElementById('questModal');
+            const title = document.getElementById('questModalTitle');
+            const body = document.getElementById('questModalBody');
+
+            title.textContent = quest.title || 'Quest';
+
+            const status = (quest.status || 'active').toLowerCase();
+            let statusColor = 'var(--yellow-400)';
+            if (status === 'completed') statusColor = 'var(--green-400)';
+            if (status === 'failed') statusColor = 'var(--red-400)';
+
+            let html = `
+                <div class="property-row">
+                    <span class="property-label">Status</span>
+                    <span class="property-value" style="text-transform: uppercase; color: ${statusColor}; font-weight: 600;">${status}</span>
+                </div>
+            `;
+
+            if (quest.summary) {
+                html += `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Summary</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${quest.summary}</p>
+                    </div>
+                `;
+            }
+
+            if (quest.description) {
+                html += `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Details</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${quest.description}</p>
+                    </div>
+                `;
+            }
+
+            if (quest.rewards) {
+                html += `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Rewards</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${quest.rewards}</p>
+                    </div>
+                `;
+            }
+
+            body.innerHTML = html;
+            modal.classList.remove('hidden');
+        }
+
+        // =====================================================================
+        // SECTION 10 (CONT.): ROLL HISTORY DISPLAY
+        // =====================================================================
+        // Claude:
+        //   - updateRollHistory() renders recent dice rolls in a dedicated panel.
+        //   - Roll history is capped at 20 entries and stored in gameData.rollHistory.
+
+        function updateRollHistory() {
+            const rollHistoryEl = document.getElementById('rollHistoryList');
+            if (!rollHistoryEl) return;
+
+            const rolls = gameData.rollHistory || [];
+            if (rolls.length === 0) {
+                rollHistoryEl.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 0.75rem;">No rolls yet.</p>';
+                return;
+            }
+
+            rollHistoryEl.innerHTML = rolls.slice(0, 10).map(r => {
+                let rollDisplay = r.rolls.join(', ');
+                if (r.advantageMode === 'advantage' || r.advantageMode === 'disadvantage') {
+                    const chosen = r.advantageMode === 'advantage' ? Math.max(...r.rolls) : Math.min(...r.rolls);
+                    rollDisplay = `${r.rolls[0]}, ${r.rolls[1]} → ${chosen}`;
+                }
+                const modText = r.modifier >= 0 ? `+${r.modifier}` : `${r.modifier}`;
+                let advText = '';
+                if (r.advantageMode === 'advantage') advText = ' (ADV)';
+                if (r.advantageMode === 'disadvantage') advText = ' (DIS)';
+
+                return `
+                    <div style="font-size: 0.8rem; padding: 0.25rem 0; border-bottom: 1px solid var(--slate-700);">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--slate-300);">${r.type}${advText}</span>
+                            <span style="font-weight: 600; color: var(--blue-400);">${r.result}</span>
+                        </div>
+                        <div style="color: var(--slate-500); font-size: 0.75rem;">
+                            [${rollDisplay}] ${modText}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1116,7 +1256,47 @@ body {
             if (item.isUnique) html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(250, 204, 21, 0.2); border: 1px solid var(--yellow-400); border-radius: 0.5rem;"><p style="font-size: 0.875rem; color: var(--yellow-400); font-weight: 600;">⚡ Unique Item - One of a kind</p></div>`;
 
             body.innerHTML = html || '<p>No details available.</p>';
+
+            // Add use button for consumable items
+            if (item.type && item.type.toLowerCase().includes('consumable') ||
+                item.type && (item.type.toLowerCase().includes('potion') || item.type.toLowerCase().includes('scroll'))) {
+                const useBtn = document.createElement('button');
+                useBtn.className = 'btn btn-primary';
+                useBtn.style.width = '100%';
+                useBtn.style.marginTop = '1rem';
+                useBtn.textContent = 'Use Item';
+                useBtn.onclick = () => {
+                    useItem(index);
+                    modal.classList.add('hidden');
+                };
+                body.appendChild(useBtn);
+            }
+
             modal.classList.remove('hidden');
+        }
+
+        function useItem(index) {
+            const char = gameData.character;
+            if (!char || !char.inventory) return;
+            const item = char.inventory[index];
+            if (!item) return;
+
+            // Log usage
+            gameData.messages.push({
+                role: 'system',
+                content: `You used: ${item.name}${item.description ? ' - ' + item.description : ''}`
+            });
+
+            // Decrease quantity or remove item
+            if (item.quantity > 1) {
+                char.inventory[index].quantity -= 1;
+            } else {
+                char.inventory.splice(index, 1);
+            }
+
+            persistGame();
+            updateCharacterSheet();
+            updateMessageLog();
         }
 
         function normalizeInventory(inventory) {
@@ -1183,7 +1363,7 @@ body {
             return Math.floor(Math.random() * sides) + 1;
         }
 
-        function rollExpression(formula) {
+        function rollExpression(formula, advantageMode = 'normal') {
             const trimmed = String(formula || '').trim();
             const match = trimmed.match(/^(\d*)d(\d+)([+-]\d+)?$/i);
             if (!match) {
@@ -1193,14 +1373,33 @@ body {
             const size = parseInt(match[2], 10);
             const mod = match[3] ? parseInt(match[3], 10) : 0;
             const rolls = [];
+
+            // Handle advantage/disadvantage for d20 rolls
+            if (size === 20 && count === 1 && advantageMode !== 'normal') {
+                const roll1 = rollDice(size);
+                const roll2 = rollDice(size);
+                rolls.push(roll1, roll2);
+                const chosenRoll = advantageMode === 'advantage' ? Math.max(roll1, roll2) : Math.min(roll1, roll2);
+                return {
+                    total: chosenRoll + mod,
+                    rolls: [roll1, roll2],
+                    chosenRoll,
+                    modifier: mod,
+                    formula: trimmed,
+                    advantageMode,
+                    error: false
+                };
+            }
+
+            // Normal rolling
             for (let i = 0; i < count; i++) {
                 rolls.push(rollDice(size));
             }
             const sum = rolls.reduce((a, b) => a + b, 0);
-            return { total: sum + mod, rolls, modifier: mod, formula: trimmed, error: false };
+            return { total: sum + mod, rolls, modifier: mod, formula: trimmed, advantageMode: 'normal', error: false };
         }
 
-        function performSkillCheck(skillName) {
+        function performSkillCheck(skillName, advantageMode = 'normal') {
             const char = gameData.character;
             if (!char || !char.stats) return;
 
@@ -1215,15 +1414,39 @@ body {
 
             const abilityScore = char.stats[abilityKey] || 10;
             const mod = getModifier(abilityScore);
-            const roll = rollExpression('1d20');
+            const roll = rollExpression('1d20', advantageMode);
             if (roll.error) return;
 
             const total = roll.total + mod;
             const modText = mod >= 0 ? `+${mod}` : `${mod}`;
 
-            const message = `${label}: rolled ${roll.rolls[0]} ${modText} = ${total}`;
+            let message = `${label}`;
+            if (advantageMode === 'advantage') {
+                message += ` (Advantage): rolled ${roll.rolls[0]} and ${roll.rolls[1]}, chose ${roll.chosenRoll} ${modText} = ${total}`;
+            } else if (advantageMode === 'disadvantage') {
+                message += ` (Disadvantage): rolled ${roll.rolls[0]} and ${roll.rolls[1]}, chose ${roll.chosenRoll} ${modText} = ${total}`;
+            } else {
+                message += `: rolled ${roll.rolls[0]} ${modText} = ${total}`;
+            }
+
             gameData.messages.push({ role: 'system', content: message });
+
+            // Add to roll history
+            gameData.rollHistory.unshift({
+                type: label,
+                result: total,
+                rolls: roll.rolls,
+                modifier: mod,
+                advantageMode,
+                timestamp: new Date().toISOString()
+            });
+            if (gameData.rollHistory.length > 20) {
+                gameData.rollHistory = gameData.rollHistory.slice(0, 20);
+            }
+
             updateMessageLog();
+            updateRollHistory();
+            persistGame();
 
             return { total, roll, mod };
         }
@@ -1428,6 +1651,7 @@ Your ENTIRE response must be ONLY this JSON object, with no extra commentary.`;
                 updateCharacterSheet();
                 updateGameState();
                 updateMessageLog();
+                updateRollHistory();
 
             } catch (error) {
                 console.error('Error generating opening:', error);
@@ -1692,13 +1916,81 @@ IMPORTANT:
         });
 
         document.getElementById('rollD20Btn').addEventListener('click', () => {
-            const result = rollExpression('1d20');
+            const result = rollExpression('1d20', 'normal');
             if (result.error) return;
             gameData.messages.push({
                 role: 'system',
                 content: `You roll a d20: ${result.rolls[0]}`
             });
+
+            // Add to roll history
+            gameData.rollHistory.unshift({
+                type: 'D20 Roll',
+                result: result.rolls[0],
+                rolls: result.rolls,
+                modifier: 0,
+                advantageMode: 'normal',
+                timestamp: new Date().toISOString()
+            });
+            if (gameData.rollHistory.length > 20) {
+                gameData.rollHistory = gameData.rollHistory.slice(0, 20);
+            }
+
             updateMessageLog();
+            updateRollHistory();
+            persistGame();
+        });
+
+        document.getElementById('rollAdvBtn').addEventListener('click', () => {
+            const result = rollExpression('1d20', 'advantage');
+            if (result.error) return;
+            gameData.messages.push({
+                role: 'system',
+                content: `You roll a d20 with Advantage: rolled ${result.rolls[0]} and ${result.rolls[1]}, chose ${result.chosenRoll}`
+            });
+
+            // Add to roll history
+            gameData.rollHistory.unshift({
+                type: 'D20 Roll',
+                result: result.chosenRoll,
+                rolls: result.rolls,
+                modifier: 0,
+                advantageMode: 'advantage',
+                timestamp: new Date().toISOString()
+            });
+            if (gameData.rollHistory.length > 20) {
+                gameData.rollHistory = gameData.rollHistory.slice(0, 20);
+            }
+
+            updateMessageLog();
+            updateRollHistory();
+            persistGame();
+        });
+
+        document.getElementById('rollDisBtn').addEventListener('click', () => {
+            const result = rollExpression('1d20', 'disadvantage');
+            if (result.error) return;
+            gameData.messages.push({
+                role: 'system',
+                content: `You roll a d20 with Disadvantage: rolled ${result.rolls[0]} and ${result.rolls[1]}, chose ${result.chosenRoll}`
+            });
+
+            // Add to roll history
+            gameData.rollHistory.unshift({
+                type: 'D20 Roll',
+                result: result.chosenRoll,
+                rolls: result.rolls,
+                modifier: 0,
+                advantageMode: 'disadvantage',
+                timestamp: new Date().toISOString()
+            });
+            if (gameData.rollHistory.length > 20) {
+                gameData.rollHistory = gameData.rollHistory.slice(0, 20);
+            }
+
+            updateMessageLog();
+            updateRollHistory();
+            persistGame();
         });
 
         document.getElementById('perceptionBtn').addEventListener('click', () => {
@@ -1718,6 +2010,16 @@ IMPORTANT:
             }
         });
 
+        document.getElementById('questModalClose').addEventListener('click', () => {
+            document.getElementById('questModal').classList.add('hidden');
+        });
+
+        document.getElementById('questModal').addEventListener('click', (e) => {
+            if (e.target.id === 'questModal') {
+                document.getElementById('questModal').classList.add('hidden');
+            }
+        });
+
         // Save menu
         document.getElementById('saveMenuBtn').addEventListener('click', () => {
             document.getElementById('saveMenu').classList.toggle('hidden');
@@ -1730,6 +2032,7 @@ IMPORTANT:
                 adventurePreferences: gameData.adventurePreferences,
                 messages: gameData.messages,
                 quests: gameData.quests,
+                rollHistory: gameData.rollHistory,
                 hasOpening: gameData.hasOpening,
                 timestamp: new Date().toISOString()
             };
@@ -1762,6 +2065,7 @@ IMPORTANT:
                     gameData.adventurePreferences = imported.adventurePreferences || null;
                     gameData.messages = imported.messages || [];
                     gameData.quests = imported.quests || [];
+                    gameData.rollHistory = imported.rollHistory || [];
                     gameData.hasOpening = !!imported.hasOpening;
                     persistGame();
                     alert('Game loaded successfully!');
@@ -1798,6 +2102,7 @@ IMPORTANT:
             updateCharacterSheet();
             updateGameState();
             updateMessageLog();
+            updateRollHistory();
         }
     </script>
 </body>
