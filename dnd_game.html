@@ -1613,6 +1613,85 @@ body {
         // SECTION 5 (CONT.): OPENING GENERATION
         // =====================================================================
 
+        function getDefaultStartingEquipment(className, level) {
+            const common = [
+                { name: 'Backpack', type: 'Equipment', quantity: 1, description: 'A sturdy leather backpack.' },
+                { name: 'Waterskin', type: 'Equipment', quantity: 1, description: 'Holds water for your journey.' },
+                { name: 'Rations', type: 'Consumable', quantity: 5, description: 'Travel rations. Restores a small amount of health.' },
+                { name: 'Bedroll', type: 'Equipment', quantity: 1, description: 'For resting during long journeys.' },
+                { name: 'Rope (50 ft)', type: 'Equipment', quantity: 1, description: 'Hemp rope, useful for climbing.' }
+            ];
+
+            const classEquipment = {
+                'Fighter': [
+                    { name: 'Longsword', type: 'Weapon', damage: '1d8', quantity: 1, description: 'A versatile blade.' },
+                    { name: 'Shield', type: 'Armor', armorClass: '+2', quantity: 1, description: 'Wooden shield reinforced with iron.' },
+                    { name: 'Chain Mail', type: 'Armor', armorClass: '16', quantity: 1, description: 'Heavy armor providing excellent protection.' }
+                ],
+                'Wizard': [
+                    { name: 'Spellbook', type: 'Equipment', quantity: 1, rarity: 'Uncommon', description: 'Contains your known spells.' },
+                    { name: 'Component Pouch', type: 'Equipment', quantity: 1, description: 'Holds spell components.' },
+                    { name: 'Quarterstaff', type: 'Weapon', damage: '1d6', quantity: 1, description: 'A simple walking staff.' }
+                ],
+                'Rogue': [
+                    { name: 'Shortsword', type: 'Weapon', damage: '1d6', quantity: 1, description: 'Light and quick.' },
+                    { name: 'Dagger', type: 'Weapon', damage: '1d4', quantity: 2, description: 'Small concealed blade.' },
+                    { name: 'Thieves\' Tools', type: 'Equipment', quantity: 1, description: 'For picking locks and disarming traps.' },
+                    { name: 'Leather Armor', type: 'Armor', armorClass: '11', quantity: 1, description: 'Light armor for stealth.' }
+                ],
+                'Cleric': [
+                    { name: 'Mace', type: 'Weapon', damage: '1d6', quantity: 1, description: 'A holy weapon.' },
+                    { name: 'Shield', type: 'Armor', armorClass: '+2', quantity: 1, description: 'Blessed shield.' },
+                    { name: 'Holy Symbol', type: 'Equipment', quantity: 1, description: 'Focus for divine spells.' },
+                    { name: 'Prayer Book', type: 'Equipment', quantity: 1, description: 'Contains prayers and devotions.' }
+                ],
+                'Ranger': [
+                    { name: 'Longbow', type: 'Weapon', damage: '1d8', quantity: 1, properties: ['Range 150/600'], description: 'Hunting bow.' },
+                    { name: 'Arrows', type: 'Ammunition', quantity: 20, description: 'Fletched arrows.' },
+                    { name: 'Shortsword', type: 'Weapon', damage: '1d6', quantity: 1, description: 'Backup weapon.' }
+                ],
+                'Paladin': [
+                    { name: 'Longsword', type: 'Weapon', damage: '1d8', quantity: 1, description: 'Holy blade.' },
+                    { name: 'Shield', type: 'Armor', armorClass: '+2', quantity: 1, description: 'Sacred shield.' },
+                    { name: 'Chain Mail', type: 'Armor', armorClass: '16', quantity: 1, description: 'Blessed armor.' },
+                    { name: 'Holy Symbol', type: 'Equipment', quantity: 1, description: 'Symbol of your oath.' }
+                ],
+                'Barbarian': [
+                    { name: 'Greataxe', type: 'Weapon', damage: '1d12', quantity: 1, description: 'Massive two-handed axe.' },
+                    { name: 'Handaxe', type: 'Weapon', damage: '1d6', quantity: 2, description: 'Throwing axes.' }
+                ],
+                'Bard': [
+                    { name: 'Rapier', type: 'Weapon', damage: '1d8', quantity: 1, description: 'Elegant dueling sword.' },
+                    { name: 'Lute', type: 'Equipment', quantity: 1, description: 'Musical instrument and spell focus.' },
+                    { name: 'Leather Armor', type: 'Armor', armorClass: '11', quantity: 1, description: 'Comfortable armor.' }
+                ],
+                'Warlock': [
+                    { name: 'Quarterstaff', type: 'Weapon', damage: '1d6', quantity: 1, description: 'Arcane focus staff.' },
+                    { name: 'Leather Armor', type: 'Armor', armorClass: '11', quantity: 1, description: 'Light protection.' },
+                    { name: 'Component Pouch', type: 'Equipment', quantity: 1, description: 'Spell components.' }
+                ],
+                'Sorcerer': [
+                    { name: 'Dagger', type: 'Weapon', damage: '1d4', quantity: 2, description: 'Simple blade.' },
+                    { name: 'Arcane Focus', type: 'Equipment', quantity: 1, description: 'Crystal for channeling magic.' },
+                    { name: 'Component Pouch', type: 'Equipment', quantity: 1, description: 'Spell components.' }
+                ]
+            };
+
+            const classItems = classEquipment[className] || classEquipment['Fighter'];
+
+            // Add healing potions based on level
+            const potions = Math.max(2, Math.floor(level / 2));
+            classItems.push({
+                name: 'Potion of Healing',
+                type: 'Potion',
+                quantity: potions,
+                description: 'Heals 2d4+2 hit points when consumed.',
+                rarity: 'Common'
+            });
+
+            return [...common, ...classItems];
+        }
+
         async function generateOpening() {
             const char = gameData.character;
             const prefs = gameData.adventurePreferences;
@@ -1642,11 +1721,32 @@ You MUST respond with a single JSON object with at least:
 {
   "narrative": "Opening story text with optional formatting like **bold**, *italic*, [red]colored text[/red]...",
   "characterUpdates": {
-    "inventory": [ ... full inventory ... ],
+    "inventory": [
+      {
+        "name": "Longsword",
+        "type": "Weapon",
+        "damage": "1d8",
+        "quantity": 1,
+        "description": "A well-balanced blade"
+      },
+      {
+        "name": "Potion of Healing",
+        "type": "Potion",
+        "quantity": 2,
+        "rarity": "Common",
+        "description": "Heals 2d4+2 hit points"
+      },
+      {
+        "name": "Backpack",
+        "type": "Equipment",
+        "quantity": 1,
+        "description": "Sturdy leather backpack"
+      }
+    ],
     "currency": {
-      "gold": 0,
-      "silver": 0,
-      "copper": 0,
+      "gold": 15,
+      "silver": 30,
+      "copper": 50,
       "platinum": 0
     },
     "hp": 12,
@@ -1664,6 +1764,13 @@ You MUST respond with a single JSON object with at least:
   "location": "Starting location name"
 }
 
+INVENTORY REQUIREMENTS:
+- MUST include at least 5-8 items appropriate for the character's class and level
+- Include weapons, armor, equipment, and consumables
+- Each item MUST have: "name", "type", "quantity", "description"
+- Optional fields: "damage", "armorClass", "rarity", "properties", "weight", "value"
+- For consumables/potions: set type to "Potion" or "Consumable"
+
 You MAY ALSO include (optional but recommended):
 - "inCombat": false,
 - "enemies": [ { "name": "...", "hp": 10, "maxHp": 10, "ac": 12 } ],
@@ -1680,12 +1787,25 @@ You MAY ALSO include (optional but recommended):
 Your ENTIRE response must be ONLY this JSON object, with no extra commentary.`;
 
             try {
-                const aiResponse = await callAI(systemPrompt, "Generate starting equipment, currency, opening narrative, and (optionally) starting quests for this character.");
+                const aiResponse = await callAI(systemPrompt, "Generate starting equipment, currency, opening narrative, and (optionally) starting quests for this character. IMPORTANT: The character MUST have at least 3-5 starting items in their inventory based on their class and level.");
+
+                console.log('AI Response:', aiResponse);
 
                 // Character updates
                 if (aiResponse.characterUpdates) {
                     if (aiResponse.characterUpdates.inventory) {
-                        gameData.character.inventory = normalizeInventory(aiResponse.characterUpdates.inventory);
+                        const normalized = normalizeInventory(aiResponse.characterUpdates.inventory);
+                        console.log('Normalized inventory:', normalized);
+                        gameData.character.inventory = normalized;
+
+                        // Fallback: If no items after normalization, add basic starting equipment
+                        if (gameData.character.inventory.length === 0) {
+                            console.warn('No inventory items from AI, adding fallback equipment');
+                            gameData.character.inventory = getDefaultStartingEquipment(char.class, char.level);
+                        }
+                    } else {
+                        console.warn('No inventory in AI response, adding default equipment');
+                        gameData.character.inventory = getDefaultStartingEquipment(char.class, char.level);
                     }
                     if (aiResponse.characterUpdates.currency) {
                         gameData.character.currency = Object.assign(
