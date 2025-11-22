@@ -879,7 +879,7 @@ body {
             // Strikethrough
             text = text.replace(/~~(.*?)~~/g, '<span style="text-decoration: line-through;">$1</span>');
             // Spoiler (hidden until hover)
-            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span style="background-color: var(--slate-400); color: var(--slate-400); cursor: pointer;" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'var(--slate-400)\'">$1</span>');
+            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span style="background-color: var(--slate-400); color: var(--slate-400); cursor: pointer;" onmouseover="this.style.color=&quot;white&quot;" onmouseout="this.style.color=&quot;var(--slate-400)&quot;">$1</span>');
             // Highlight
             text = text.replace(/\[highlight\](.*?)\[\/highlight\]/g, '<span style="background-color: rgba(250, 204, 21, 0.3); padding: 0.125rem 0.25rem; border-radius: 0.25rem;">$1</span>');
             // Colors
