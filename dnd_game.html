@@ -1006,20 +1006,29 @@ body {
             if (inv.length === 0) {
                 inventoryList.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No items yet</p>';
             } else {
-                inventoryList.innerHTML = inv.map((item, index) => {
+                inventoryList.innerHTML = '';
+                inv.forEach((item, index) => {
+                    if (!item || !item.name) return; // Skip invalid items
+
                     const rarityClass = item.rarity ? `rarity-${item.rarity.toLowerCase().replace(/\s+/g, '')}` : 'rarity-common';
-                    return `
-                        <div class="inventory-item ${rarityClass}" onclick="showItemModal(${index})">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <p style="font-weight: 500;">${item.name}</p>
-                                    ${item.quantity > 1 ? `<p style="font-size: 0.75rem; color: var(--slate-400);">Quantity: ${item.quantity}</p>` : ''}
-                                </div>
-                                ${item.rarity ? `<span class="badge badge-rarity">${item.rarity}</span>` : ''}
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `inventory-item ${rarityClass}`;
+                    itemDiv.style.cursor = 'pointer';
+                    itemDiv.onclick = function() { showItemModal(index); };
+
+                    itemDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-weight: 500;">${item.name}</p>
+                                ${item.quantity && item.quantity > 1 ? `<p style="font-size: 0.75rem; color: var(--slate-400);">Quantity: ${item.quantity}</p>` : ''}
                             </div>
+                            ${item.rarity ? `<span class="badge badge-rarity">${item.rarity}</span>` : ''}
                         </div>
                     `;
-                }).join('');
+
+                    inventoryList.appendChild(itemDiv);
+                });
             }
 
             updateQuestList();
@@ -1231,74 +1240,150 @@ body {
         //     inventory + re-render.
 
         function showItemModal(index) {
-            const char = gameData.character;
-            if (!char || !char.inventory) return;
-            const item = char.inventory[index];
-            if (!item) return;
-
-            const modal = document.getElementById('itemModal');
-            const title = document.getElementById('itemModalTitle');
-            const body = document.getElementById('itemModalBody');
-
-            title.textContent = item.name || 'Item';
-
-            let html = '';
-            if (item.rarity) html += `<div class="property-row"><span class="property-label">Rarity</span><span class="property-value" style="text-transform: capitalize;">${item.rarity}</span></div>`;
-            if (item.type) html += `<div class="property-row"><span class="property-label">Type</span><span class="property-value">${item.type}</span></div>`;
-            if (item.quantity > 1) html += `<div class="property-row"><span class="property-label">Quantity</span><span class="property-value">${item.quantity}</span></div>`;
-            if (item.weight) html += `<div class="property-row"><span class="property-label">Weight</span><span class="property-value">${item.weight} lbs</span></div>`;
-            if (item.value) html += `<div class="property-row"><span class="property-label">Value</span><span class="property-value">${item.value}</span></div>`;
-            if (item.damage) html += `<div class="property-row"><span class="property-label">Damage</span><span class="property-value">${item.damage}</span></div>`;
-            if (item.armorClass) html += `<div class="property-row"><span class="property-label">Armor Class</span><span class="property-value">${item.armorClass}</span></div>`;
-            if (item.properties && item.properties.length > 0) html += `<div class="property-row"><span class="property-label">Properties</span><span class="property-value">${item.properties.join(', ')}</span></div>`;
-            if (item.description) html += `<div style="margin-top: 1rem;"><h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4><p style="font-size: 0.875rem; color: var(--slate-200);">${item.description}</p></div>`;
-            if (item.magicalProperties) html += `<div style="margin-top: 1rem;"><h4 style="font-size: 0.875rem; font-weight: 600; color: var(--purple-400); margin-bottom: 0.5rem;">Magical Properties</h4><p style="font-size: 0.875rem; color: var(--slate-200);">${item.magicalProperties}</p></div>`;
-            if (item.isUnique) html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(250, 204, 21, 0.2); border: 1px solid var(--yellow-400); border-radius: 0.5rem;"><p style="font-size: 0.875rem; color: var(--yellow-400); font-weight: 600;">⚡ Unique Item - One of a kind</p></div>`;
-
-            body.innerHTML = html || '<p>No details available.</p>';
-
-            // Add use button for consumable items
-            if (item.type) {
-                const itemType = item.type.toLowerCase();
-                if (itemType.includes('consumable') || itemType.includes('potion') || itemType.includes('scroll')) {
-                    const useBtn = document.createElement('button');
-                    useBtn.className = 'btn btn-primary';
-                    useBtn.style.width = '100%';
-                    useBtn.style.marginTop = '1rem';
-                    useBtn.textContent = 'Use Item';
-                    useBtn.onclick = () => {
-                        useItem(index);
-                        modal.classList.add('hidden');
-                    };
-                    body.appendChild(useBtn);
+            try {
+                const char = gameData.character;
+                if (!char || !char.inventory) {
+                    console.error('No character or inventory found');
+                    return;
                 }
-            }
 
-            modal.classList.remove('hidden');
+                const item = char.inventory[index];
+                if (!item) {
+                    console.error('Item not found at index:', index);
+                    return;
+                }
+
+                const modal = document.getElementById('itemModal');
+                const title = document.getElementById('itemModalTitle');
+                const body = document.getElementById('itemModalBody');
+
+                if (!modal || !title || !body) {
+                    console.error('Modal elements not found');
+                    return;
+                }
+
+                title.textContent = item.name || 'Unknown Item';
+
+                // Build item details
+                let html = '<div style="margin-bottom: 1rem;">';
+
+                if (item.rarity) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Rarity</span><span style="text-transform: capitalize; font-weight: 600;">${item.rarity}</span></div>`;
+                }
+                if (item.type) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Type</span><span style="font-weight: 600;">${item.type}</span></div>`;
+                }
+                if (item.quantity && item.quantity > 1) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Quantity</span><span style="font-weight: 600;">${item.quantity}</span></div>`;
+                }
+                if (item.weight) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Weight</span><span style="font-weight: 600;">${item.weight} lbs</span></div>`;
+                }
+                if (item.value) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Value</span><span style="font-weight: 600;">${item.value}</span></div>`;
+                }
+                if (item.damage) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Damage</span><span style="font-weight: 600; color: var(--red-400);">${item.damage}</span></div>`;
+                }
+                if (item.armorClass) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Armor Class</span><span style="font-weight: 600; color: var(--blue-400);">${item.armorClass}</span></div>`;
+                }
+                if (item.properties && Array.isArray(item.properties) && item.properties.length > 0) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Properties</span><span style="font-weight: 600;">${item.properties.join(', ')}</span></div>`;
+                }
+
+                html += '</div>';
+
+                if (item.description) {
+                    html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(100, 116, 139, 0.1); border-radius: 0.375rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200); line-height: 1.5;">${item.description}</p>
+                    </div>`;
+                }
+
+                if (item.magicalProperties) {
+                    html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(168, 85, 247, 0.1); border: 1px solid var(--purple-500); border-radius: 0.375rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--purple-400); margin-bottom: 0.5rem;">✨ Magical Properties</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200); line-height: 1.5;">${item.magicalProperties}</p>
+                    </div>`;
+                }
+
+                if (item.isUnique) {
+                    html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(250, 204, 21, 0.1); border: 1px solid var(--yellow-400); border-radius: 0.375rem;">
+                        <p style="font-size: 0.875rem; color: var(--yellow-400); font-weight: 600;">⚡ Unique Item - One of a kind</p>
+                    </div>`;
+                }
+
+                body.innerHTML = html || '<p style="color: var(--slate-400); text-align: center; padding: 2rem;">No details available for this item.</p>';
+
+                // Add use button for consumable items
+                if (item.type) {
+                    const itemType = item.type.toLowerCase();
+                    if (itemType.includes('consumable') || itemType.includes('potion') || itemType.includes('scroll') || itemType.includes('food')) {
+                        const useBtn = document.createElement('button');
+                        useBtn.className = 'btn btn-primary';
+                        useBtn.style.width = '100%';
+                        useBtn.style.marginTop = '1rem';
+                        useBtn.textContent = '✓ Use Item';
+                        useBtn.onclick = function() {
+                            useItem(index);
+                            modal.classList.add('hidden');
+                        };
+                        body.appendChild(useBtn);
+                    }
+                }
+
+                modal.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error showing item modal:', error);
+                alert('Error displaying item details. Please try again.');
+            }
         }
 
         function useItem(index) {
-            const char = gameData.character;
-            if (!char || !char.inventory) return;
-            const item = char.inventory[index];
-            if (!item) return;
+            try {
+                const char = gameData.character;
+                if (!char || !char.inventory) {
+                    console.error('No character or inventory found');
+                    return;
+                }
 
-            // Log usage
-            gameData.messages.push({
-                role: 'system',
-                content: `You used: ${item.name}${item.description ? ' - ' + item.description : ''}`
-            });
+                const item = char.inventory[index];
+                if (!item) {
+                    console.error('Item not found at index:', index);
+                    return;
+                }
 
-            // Decrease quantity or remove item
-            if (item.quantity > 1) {
-                char.inventory[index].quantity -= 1;
-            } else {
-                char.inventory.splice(index, 1);
+                const itemName = item.name || 'Unknown Item';
+
+                // Log usage with formatted message
+                let usageMessage = `**You used: ${itemName}**`;
+                if (item.description) {
+                    usageMessage += `\n${item.description}`;
+                }
+
+                gameData.messages.push({
+                    role: 'system',
+                    content: usageMessage
+                });
+
+                // Decrease quantity or remove item
+                if (item.quantity && item.quantity > 1) {
+                    char.inventory[index].quantity -= 1;
+                } else {
+                    char.inventory.splice(index, 1);
+                }
+
+                // Save and update UI
+                persistGame();
+                updateCharacterSheet();
+                updateMessageLog();
+
+                console.log(`Used item: ${itemName}`);
+            } catch (error) {
+                console.error('Error using item:', error);
+                alert('Error using item. Please try again.');
             }
-
-            persistGame();
-            updateCharacterSheet();
-            updateMessageLog();
         }
 
         function normalizeInventory(inventory) {
