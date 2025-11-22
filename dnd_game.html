@@ -879,7 +879,7 @@ body {
             // Strikethrough
             text = text.replace(/~~(.*?)~~/g, '<span style="text-decoration: line-through;">$1</span>');
             // Spoiler (hidden until hover)
-            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span style="background-color: var(--slate-400); color: var(--slate-400); cursor: pointer;" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'var(--slate-400)\'">$1</span>');
+            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span style="background-color: var(--slate-400); color: var(--slate-400); cursor: pointer;" onmouseover="this.style.color=&quot;white&quot;" onmouseout="this.style.color=&quot;var(--slate-400)&quot;">$1</span>');
             // Highlight
             text = text.replace(/\[highlight\](.*?)\[\/highlight\]/g, '<span style="background-color: rgba(250, 204, 21, 0.3); padding: 0.125rem 0.25rem; border-radius: 0.25rem;">$1</span>');
             // Colors
@@ -1006,20 +1006,29 @@ body {
             if (inv.length === 0) {
                 inventoryList.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No items yet</p>';
             } else {
-                inventoryList.innerHTML = inv.map((item, index) => {
+                inventoryList.innerHTML = '';
+                inv.forEach((item, index) => {
+                    if (!item || !item.name) return; // Skip invalid items
+
                     const rarityClass = item.rarity ? `rarity-${item.rarity.toLowerCase().replace(/\s+/g, '')}` : 'rarity-common';
-                    return `
-                        <div class="inventory-item ${rarityClass}" onclick="showItemModal(${index})">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <p style="font-weight: 500;">${item.name}</p>
-                                    ${item.quantity > 1 ? `<p style="font-size: 0.75rem; color: var(--slate-400);">Quantity: ${item.quantity}</p>` : ''}
-                                </div>
-                                ${item.rarity ? `<span class="badge badge-rarity">${item.rarity}</span>` : ''}
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `inventory-item ${rarityClass}`;
+                    itemDiv.style.cursor = 'pointer';
+                    itemDiv.onclick = function() { showItemModal(index); };
+
+                    itemDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-weight: 500;">${item.name}</p>
+                                ${item.quantity && item.quantity > 1 ? `<p style="font-size: 0.75rem; color: var(--slate-400);">Quantity: ${item.quantity}</p>` : ''}
                             </div>
+                            ${item.rarity ? `<span class="badge badge-rarity">${item.rarity}</span>` : ''}
                         </div>
                     `;
-                }).join('');
+
+                    inventoryList.appendChild(itemDiv);
+                });
             }
 
             updateQuestList();
@@ -1231,72 +1240,150 @@ body {
         //     inventory + re-render.
 
         function showItemModal(index) {
-            const char = gameData.character;
-            if (!char || !char.inventory) return;
-            const item = char.inventory[index];
-            if (!item) return;
+            try {
+                const char = gameData.character;
+                if (!char || !char.inventory) {
+                    console.error('No character or inventory found');
+                    return;
+                }
 
-            const modal = document.getElementById('itemModal');
-            const title = document.getElementById('itemModalTitle');
-            const body = document.getElementById('itemModalBody');
+                const item = char.inventory[index];
+                if (!item) {
+                    console.error('Item not found at index:', index);
+                    return;
+                }
 
-            title.textContent = item.name || 'Item';
+                const modal = document.getElementById('itemModal');
+                const title = document.getElementById('itemModalTitle');
+                const body = document.getElementById('itemModalBody');
 
-            let html = '';
-            if (item.rarity) html += `<div class="property-row"><span class="property-label">Rarity</span><span class="property-value" style="text-transform: capitalize;">${item.rarity}</span></div>`;
-            if (item.type) html += `<div class="property-row"><span class="property-label">Type</span><span class="property-value">${item.type}</span></div>`;
-            if (item.quantity > 1) html += `<div class="property-row"><span class="property-label">Quantity</span><span class="property-value">${item.quantity}</span></div>`;
-            if (item.weight) html += `<div class="property-row"><span class="property-label">Weight</span><span class="property-value">${item.weight} lbs</span></div>`;
-            if (item.value) html += `<div class="property-row"><span class="property-label">Value</span><span class="property-value">${item.value}</span></div>`;
-            if (item.damage) html += `<div class="property-row"><span class="property-label">Damage</span><span class="property-value">${item.damage}</span></div>`;
-            if (item.armorClass) html += `<div class="property-row"><span class="property-label">Armor Class</span><span class="property-value">${item.armorClass}</span></div>`;
-            if (item.properties && item.properties.length > 0) html += `<div class="property-row"><span class="property-label">Properties</span><span class="property-value">${item.properties.join(', ')}</span></div>`;
-            if (item.description) html += `<div style="margin-top: 1rem;"><h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4><p style="font-size: 0.875rem; color: var(--slate-200);">${item.description}</p></div>`;
-            if (item.magicalProperties) html += `<div style="margin-top: 1rem;"><h4 style="font-size: 0.875rem; font-weight: 600; color: var(--purple-400); margin-bottom: 0.5rem;">Magical Properties</h4><p style="font-size: 0.875rem; color: var(--slate-200);">${item.magicalProperties}</p></div>`;
-            if (item.isUnique) html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(250, 204, 21, 0.2); border: 1px solid var(--yellow-400); border-radius: 0.5rem;"><p style="font-size: 0.875rem; color: var(--yellow-400); font-weight: 600;">⚡ Unique Item - One of a kind</p></div>`;
+                if (!modal || !title || !body) {
+                    console.error('Modal elements not found');
+                    return;
+                }
 
-            body.innerHTML = html || '<p>No details available.</p>';
+                title.textContent = item.name || 'Unknown Item';
 
-            // Add use button for consumable items
-            if (item.type && item.type.toLowerCase().includes('consumable') ||
-                item.type && (item.type.toLowerCase().includes('potion') || item.type.toLowerCase().includes('scroll'))) {
-                const useBtn = document.createElement('button');
-                useBtn.className = 'btn btn-primary';
-                useBtn.style.width = '100%';
-                useBtn.style.marginTop = '1rem';
-                useBtn.textContent = 'Use Item';
-                useBtn.onclick = () => {
-                    useItem(index);
-                    modal.classList.add('hidden');
-                };
-                body.appendChild(useBtn);
+                // Build item details
+                let html = '<div style="margin-bottom: 1rem;">';
+
+                if (item.rarity) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Rarity</span><span style="text-transform: capitalize; font-weight: 600;">${item.rarity}</span></div>`;
+                }
+                if (item.type) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Type</span><span style="font-weight: 600;">${item.type}</span></div>`;
+                }
+                if (item.quantity && item.quantity > 1) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Quantity</span><span style="font-weight: 600;">${item.quantity}</span></div>`;
+                }
+                if (item.weight) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Weight</span><span style="font-weight: 600;">${item.weight} lbs</span></div>`;
+                }
+                if (item.value) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Value</span><span style="font-weight: 600;">${item.value}</span></div>`;
+                }
+                if (item.damage) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Damage</span><span style="font-weight: 600; color: var(--red-400);">${item.damage}</span></div>`;
+                }
+                if (item.armorClass) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Armor Class</span><span style="font-weight: 600; color: var(--blue-400);">${item.armorClass}</span></div>`;
+                }
+                if (item.properties && Array.isArray(item.properties) && item.properties.length > 0) {
+                    html += `<div class="property-row"><span style="color: var(--slate-400);">Properties</span><span style="font-weight: 600;">${item.properties.join(', ')}</span></div>`;
+                }
+
+                html += '</div>';
+
+                if (item.description) {
+                    html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(100, 116, 139, 0.1); border-radius: 0.375rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200); line-height: 1.5;">${item.description}</p>
+                    </div>`;
+                }
+
+                if (item.magicalProperties) {
+                    html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(168, 85, 247, 0.1); border: 1px solid var(--purple-500); border-radius: 0.375rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--purple-400); margin-bottom: 0.5rem;">✨ Magical Properties</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200); line-height: 1.5;">${item.magicalProperties}</p>
+                    </div>`;
+                }
+
+                if (item.isUnique) {
+                    html += `<div style="margin-top: 1rem; padding: 0.75rem; background-color: rgba(250, 204, 21, 0.1); border: 1px solid var(--yellow-400); border-radius: 0.375rem;">
+                        <p style="font-size: 0.875rem; color: var(--yellow-400); font-weight: 600;">⚡ Unique Item - One of a kind</p>
+                    </div>`;
+                }
+
+                body.innerHTML = html || '<p style="color: var(--slate-400); text-align: center; padding: 2rem;">No details available for this item.</p>';
+
+                // Add use button for consumable items
+                if (item.type) {
+                    const itemType = item.type.toLowerCase();
+                    if (itemType.includes('consumable') || itemType.includes('potion') || itemType.includes('scroll') || itemType.includes('food')) {
+                        const useBtn = document.createElement('button');
+                        useBtn.className = 'btn btn-primary';
+                        useBtn.style.width = '100%';
+                        useBtn.style.marginTop = '1rem';
+                        useBtn.textContent = '✓ Use Item';
+                        useBtn.onclick = function() {
+                            useItem(index);
+                            modal.classList.add('hidden');
+                        };
+                        body.appendChild(useBtn);
+                    }
+                }
+
+                modal.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error showing item modal:', error);
+                alert('Error displaying item details. Please try again.');
             }
-
-            modal.classList.remove('hidden');
         }
 
         function useItem(index) {
-            const char = gameData.character;
-            if (!char || !char.inventory) return;
-            const item = char.inventory[index];
-            if (!item) return;
+            try {
+                const char = gameData.character;
+                if (!char || !char.inventory) {
+                    console.error('No character or inventory found');
+                    return;
+                }
 
-            // Log usage
-            gameData.messages.push({
-                role: 'system',
-                content: `You used: ${item.name}${item.description ? ' - ' + item.description : ''}`
-            });
+                const item = char.inventory[index];
+                if (!item) {
+                    console.error('Item not found at index:', index);
+                    return;
+                }
 
-            // Decrease quantity or remove item
-            if (item.quantity > 1) {
-                char.inventory[index].quantity -= 1;
-            } else {
-                char.inventory.splice(index, 1);
+                const itemName = item.name || 'Unknown Item';
+
+                // Log usage with formatted message
+                let usageMessage = `**You used: ${itemName}**`;
+                if (item.description) {
+                    usageMessage += `\n${item.description}`;
+                }
+
+                gameData.messages.push({
+                    role: 'system',
+                    content: usageMessage
+                });
+
+                // Decrease quantity or remove item
+                if (item.quantity && item.quantity > 1) {
+                    char.inventory[index].quantity -= 1;
+                } else {
+                    char.inventory.splice(index, 1);
+                }
+
+                // Save and update UI
+                persistGame();
+                updateCharacterSheet();
+                updateMessageLog();
+
+                console.log(`Used item: ${itemName}`);
+            } catch (error) {
+                console.error('Error using item:', error);
+                alert('Error using item. Please try again.');
             }
-
-            persistGame();
-            updateCharacterSheet();
-            updateMessageLog();
         }
 
         function normalizeInventory(inventory) {
@@ -1474,10 +1561,12 @@ body {
         // =====================================================================
 
         async function callAI(systemPrompt, userMessage) {
-            const history = gameData.messages.slice(-10).map(msg => ({
-                role: msg.role === 'system' ? 'system' : msg.role,
-                content: msg.content
-            ));
+            const history = gameData.messages.slice(-10).map(function(msg) {
+                return {
+                    role: msg.role === 'system' ? 'system' : msg.role,
+                    content: msg.content
+                };
+            });
 
             const base = (gameData.apiConfig.baseURL || '').replace(/\/+$/, '');
             let url;
@@ -1524,6 +1613,85 @@ body {
         // SECTION 5 (CONT.): OPENING GENERATION
         // =====================================================================
 
+        function getDefaultStartingEquipment(className, level) {
+            const common = [
+                { name: 'Backpack', type: 'Equipment', quantity: 1, description: 'A sturdy leather backpack.' },
+                { name: 'Waterskin', type: 'Equipment', quantity: 1, description: 'Holds water for your journey.' },
+                { name: 'Rations', type: 'Consumable', quantity: 5, description: 'Travel rations. Restores a small amount of health.' },
+                { name: 'Bedroll', type: 'Equipment', quantity: 1, description: 'For resting during long journeys.' },
+                { name: 'Rope (50 ft)', type: 'Equipment', quantity: 1, description: 'Hemp rope, useful for climbing.' }
+            ];
+
+            const classEquipment = {
+                'Fighter': [
+                    { name: 'Longsword', type: 'Weapon', damage: '1d8', quantity: 1, description: 'A versatile blade.' },
+                    { name: 'Shield', type: 'Armor', armorClass: '+2', quantity: 1, description: 'Wooden shield reinforced with iron.' },
+                    { name: 'Chain Mail', type: 'Armor', armorClass: '16', quantity: 1, description: 'Heavy armor providing excellent protection.' }
+                ],
+                'Wizard': [
+                    { name: 'Spellbook', type: 'Equipment', quantity: 1, rarity: 'Uncommon', description: 'Contains your known spells.' },
+                    { name: 'Component Pouch', type: 'Equipment', quantity: 1, description: 'Holds spell components.' },
+                    { name: 'Quarterstaff', type: 'Weapon', damage: '1d6', quantity: 1, description: 'A simple walking staff.' }
+                ],
+                'Rogue': [
+                    { name: 'Shortsword', type: 'Weapon', damage: '1d6', quantity: 1, description: 'Light and quick.' },
+                    { name: 'Dagger', type: 'Weapon', damage: '1d4', quantity: 2, description: 'Small concealed blade.' },
+                    { name: 'Thieves\' Tools', type: 'Equipment', quantity: 1, description: 'For picking locks and disarming traps.' },
+                    { name: 'Leather Armor', type: 'Armor', armorClass: '11', quantity: 1, description: 'Light armor for stealth.' }
+                ],
+                'Cleric': [
+                    { name: 'Mace', type: 'Weapon', damage: '1d6', quantity: 1, description: 'A holy weapon.' },
+                    { name: 'Shield', type: 'Armor', armorClass: '+2', quantity: 1, description: 'Blessed shield.' },
+                    { name: 'Holy Symbol', type: 'Equipment', quantity: 1, description: 'Focus for divine spells.' },
+                    { name: 'Prayer Book', type: 'Equipment', quantity: 1, description: 'Contains prayers and devotions.' }
+                ],
+                'Ranger': [
+                    { name: 'Longbow', type: 'Weapon', damage: '1d8', quantity: 1, properties: ['Range 150/600'], description: 'Hunting bow.' },
+                    { name: 'Arrows', type: 'Ammunition', quantity: 20, description: 'Fletched arrows.' },
+                    { name: 'Shortsword', type: 'Weapon', damage: '1d6', quantity: 1, description: 'Backup weapon.' }
+                ],
+                'Paladin': [
+                    { name: 'Longsword', type: 'Weapon', damage: '1d8', quantity: 1, description: 'Holy blade.' },
+                    { name: 'Shield', type: 'Armor', armorClass: '+2', quantity: 1, description: 'Sacred shield.' },
+                    { name: 'Chain Mail', type: 'Armor', armorClass: '16', quantity: 1, description: 'Blessed armor.' },
+                    { name: 'Holy Symbol', type: 'Equipment', quantity: 1, description: 'Symbol of your oath.' }
+                ],
+                'Barbarian': [
+                    { name: 'Greataxe', type: 'Weapon', damage: '1d12', quantity: 1, description: 'Massive two-handed axe.' },
+                    { name: 'Handaxe', type: 'Weapon', damage: '1d6', quantity: 2, description: 'Throwing axes.' }
+                ],
+                'Bard': [
+                    { name: 'Rapier', type: 'Weapon', damage: '1d8', quantity: 1, description: 'Elegant dueling sword.' },
+                    { name: 'Lute', type: 'Equipment', quantity: 1, description: 'Musical instrument and spell focus.' },
+                    { name: 'Leather Armor', type: 'Armor', armorClass: '11', quantity: 1, description: 'Comfortable armor.' }
+                ],
+                'Warlock': [
+                    { name: 'Quarterstaff', type: 'Weapon', damage: '1d6', quantity: 1, description: 'Arcane focus staff.' },
+                    { name: 'Leather Armor', type: 'Armor', armorClass: '11', quantity: 1, description: 'Light protection.' },
+                    { name: 'Component Pouch', type: 'Equipment', quantity: 1, description: 'Spell components.' }
+                ],
+                'Sorcerer': [
+                    { name: 'Dagger', type: 'Weapon', damage: '1d4', quantity: 2, description: 'Simple blade.' },
+                    { name: 'Arcane Focus', type: 'Equipment', quantity: 1, description: 'Crystal for channeling magic.' },
+                    { name: 'Component Pouch', type: 'Equipment', quantity: 1, description: 'Spell components.' }
+                ]
+            };
+
+            const classItems = classEquipment[className] || classEquipment['Fighter'];
+
+            // Add healing potions based on level
+            const potions = Math.max(2, Math.floor(level / 2));
+            classItems.push({
+                name: 'Potion of Healing',
+                type: 'Potion',
+                quantity: potions,
+                description: 'Heals 2d4+2 hit points when consumed.',
+                rarity: 'Common'
+            });
+
+            return [...common, ...classItems];
+        }
+
         async function generateOpening() {
             const char = gameData.character;
             const prefs = gameData.adventurePreferences;
@@ -1553,11 +1721,32 @@ You MUST respond with a single JSON object with at least:
 {
   "narrative": "Opening story text with optional formatting like **bold**, *italic*, [red]colored text[/red]...",
   "characterUpdates": {
-    "inventory": [ ... full inventory ... ],
+    "inventory": [
+      {
+        "name": "Longsword",
+        "type": "Weapon",
+        "damage": "1d8",
+        "quantity": 1,
+        "description": "A well-balanced blade"
+      },
+      {
+        "name": "Potion of Healing",
+        "type": "Potion",
+        "quantity": 2,
+        "rarity": "Common",
+        "description": "Heals 2d4+2 hit points"
+      },
+      {
+        "name": "Backpack",
+        "type": "Equipment",
+        "quantity": 1,
+        "description": "Sturdy leather backpack"
+      }
+    ],
     "currency": {
-      "gold": 0,
-      "silver": 0,
-      "copper": 0,
+      "gold": 15,
+      "silver": 30,
+      "copper": 50,
       "platinum": 0
     },
     "hp": 12,
@@ -1575,6 +1764,13 @@ You MUST respond with a single JSON object with at least:
   "location": "Starting location name"
 }
 
+INVENTORY REQUIREMENTS:
+- MUST include at least 5-8 items appropriate for the character's class and level
+- Include weapons, armor, equipment, and consumables
+- Each item MUST have: "name", "type", "quantity", "description"
+- Optional fields: "damage", "armorClass", "rarity", "properties", "weight", "value"
+- For consumables/potions: set type to "Potion" or "Consumable"
+
 You MAY ALSO include (optional but recommended):
 - "inCombat": false,
 - "enemies": [ { "name": "...", "hp": 10, "maxHp": 10, "ac": 12 } ],
@@ -1591,12 +1787,25 @@ You MAY ALSO include (optional but recommended):
 Your ENTIRE response must be ONLY this JSON object, with no extra commentary.`;
 
             try {
-                const aiResponse = await callAI(systemPrompt, "Generate starting equipment, currency, opening narrative, and (optionally) starting quests for this character.");
+                const aiResponse = await callAI(systemPrompt, "Generate starting equipment, currency, opening narrative, and (optionally) starting quests for this character. IMPORTANT: The character MUST have at least 3-5 starting items in their inventory based on their class and level.");
+
+                console.log('AI Response:', aiResponse);
 
                 // Character updates
                 if (aiResponse.characterUpdates) {
                     if (aiResponse.characterUpdates.inventory) {
-                        gameData.character.inventory = normalizeInventory(aiResponse.characterUpdates.inventory);
+                        const normalized = normalizeInventory(aiResponse.characterUpdates.inventory);
+                        console.log('Normalized inventory:', normalized);
+                        gameData.character.inventory = normalized;
+
+                        // Fallback: If no items after normalization, add basic starting equipment
+                        if (gameData.character.inventory.length === 0) {
+                            console.warn('No inventory items from AI, adding fallback equipment');
+                            gameData.character.inventory = getDefaultStartingEquipment(char.class, char.level);
+                        }
+                    } else {
+                        console.warn('No inventory in AI response, adding default equipment');
+                        gameData.character.inventory = getDefaultStartingEquipment(char.class, char.level);
                     }
                     if (aiResponse.characterUpdates.currency) {
                         gameData.character.currency = Object.assign(
