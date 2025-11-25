@@ -3720,6 +3720,7 @@ Your ENTIRE response must be ONLY this JSON object, with no extra commentary.`;
 
 CURRENT GAME STATE:
 - Location: ${state.location}
+- Weather: ${state.weather || 'Clear'}, Season: ${state.season || 'Spring'}
 - In Combat: ${state.inCombat}
 - Enemies: ${JSON.stringify(state.enemies)}
 - World Time: Day ${state.worldTime.day}, Hour ${state.worldTime.hour}
@@ -3731,6 +3732,11 @@ CHARACTER:
 - Stats: STR ${char.stats.strength}, DEX ${char.stats.dexterity}, CON ${char.stats.constitution}, INT ${char.stats.intelligence}, WIS ${char.stats.wisdom}, CHA ${char.stats.charisma}
 - Inventory: ${JSON.stringify(char.inventory.map(i => i.name))}
 - Currency: ${char.currency.gold}g, ${char.currency.silver}s, ${char.currency.copper}c, ${char.currency.platinum}p
+
+WORLD KNOWLEDGE (for context):
+- Known NPCs: ${gameData.npcs.length > 0 ? gameData.npcs.map(n => n.name).join(', ') : 'None yet'}
+- Known Factions: ${gameData.factions.length > 0 ? gameData.factions.map(f => f.name).join(', ') : 'None yet'}
+- Visited Locations: ${gameData.locationHistory.length > 0 ? gameData.locationHistory.map(l => l.name).join(', ') : 'None yet'}
 
 IMPORTANT CREATIVE GUIDELINES:
 ❌ ABSOLUTELY FORBIDDEN NAMES - These names are BANNED and will be automatically rejected:
@@ -3761,22 +3767,63 @@ You MUST respond with a JSON object:
     "currency": { "gold": X, "silver": Y, "copper": Z, "platinum": W }
   },
   "location": "Current location",
+  "weather": "Clear/Cloudy/Rainy/Stormy/Snowy/Foggy/Windy",
+  "season": "Spring/Summer/Autumn/Winter",
   "inCombat": false,
   "enemies": [ { "name": "...", "hp": X, "maxHp": Y, "ac": Z } ],
   "currentTurn": null,
   "worldTime": { "day": 1, "hour": 9 },
-  "quests": [ ... updated quest array ... ]
+  "quests": [ ... updated quest array ... ],
+  "npcs": [
+    {
+      "name": "NPC Name",
+      "description": "Brief description",
+      "relationship": "Friendly/Hostile/Neutral/Allied",
+      "relationshipValue": 10,
+      "location": "Where they are",
+      "notes": "Additional info"
+    }
+  ],
+  "lore": [
+    {
+      "title": "Lore Title",
+      "content": "Full lore text",
+      "category": "History/Legend/Rumor/Religion",
+      "discoveredAt": "Day 1, 8:00"
+    }
+  ],
+  "factions": [
+    {
+      "name": "Faction Name",
+      "description": "What they are",
+      "reputation": "Friendly/Hostile/Neutral",
+      "reputationValue": 0,
+      "rank": "Member/Leader/etc"
+    }
+  ],
+  "worldEvents": [
+    {
+      "title": "Event Title",
+      "description": "What happened",
+      "day": 1,
+      "hour": 8,
+      "location": "Where it happened"
+    }
+  ]
 }
 
 RULES:
 - Update character HP, AC, inventory, currency as events unfold
 - For inventory updates, return the FULL inventory array (add/remove items as appropriate)
 - Track time progression in worldTime
+- Update weather/season as appropriate for the world
 - Manage combat state, enemies, and turn order
-- Create/update/complete quests as the story develops. Quest updates should reflect status changes:
-  * Set status to "completed" when the player finishes quest objectives
-  * Set status to "failed" if the player fails to meet quest requirements
-  * Keep status as "active" for ongoing quests
+- Create/update/complete quests as the story develops
+- **WORLDBUILDING**: Add NPCs when characters meet new people. Include relationship info.
+- **WORLDBUILDING**: Add lore entries when players discover history, legends, or important knowledge
+- **WORLDBUILDING**: Add/update factions when organizations are mentioned or player standing changes
+- **WORLDBUILDING**: Add world events for major happenings (battles, festivals, disasters, etc.)
+- Relationship values: -100 (hostile) to +100 (allied), 0 = neutral
 - Use formatting: **bold**, *italic*, [red]color[/red], etc.
 
 Your ENTIRE response must be ONLY this JSON object.`;
@@ -3810,10 +3857,12 @@ Your ENTIRE response must be ONLY this JSON object.`;
 
                 // Update game state
                 if (aiResponse.location) state.location = aiResponse.location;
+                if (aiResponse.weather) state.weather = aiResponse.weather;
+                if (aiResponse.season) state.season = aiResponse.season;
                 if (aiResponse.inCombat !== undefined) state.inCombat = aiResponse.inCombat;
                 if (Array.isArray(aiResponse.enemies)) state.enemies = aiResponse.enemies;
                 if (aiResponse.currentTurn !== undefined) state.currentTurn = aiResponse.currentTurn;
-                
+
                 if (aiResponse.worldTime) {
                     state.worldTime = aiResponse.worldTime;
                 } else {
@@ -3823,6 +3872,49 @@ Your ENTIRE response must be ONLY this JSON object.`;
                 // Update quests
                 if (Array.isArray(aiResponse.quests)) {
                     gameData.quests = aiResponse.quests;
+                }
+
+                // Update worldbuilding data
+                if (Array.isArray(aiResponse.npcs) && aiResponse.npcs.length > 0) {
+                    aiResponse.npcs.forEach(newNPC => {
+                        const existing = gameData.npcs.find(n => n.name.toLowerCase() === newNPC.name.toLowerCase());
+                        if (existing) {
+                            // Update existing NPC
+                            Object.assign(existing, newNPC);
+                        } else {
+                            // Add new NPC
+                            gameData.npcs.push(newNPC);
+                        }
+                    });
+                }
+
+                if (Array.isArray(aiResponse.lore) && aiResponse.lore.length > 0) {
+                    aiResponse.lore.forEach(newLore => {
+                        const existing = gameData.lore.find(l => l.title.toLowerCase() === newLore.title.toLowerCase());
+                        if (!existing) {
+                            gameData.lore.push(newLore);
+                        }
+                    });
+                }
+
+                if (Array.isArray(aiResponse.factions) && aiResponse.factions.length > 0) {
+                    aiResponse.factions.forEach(newFaction => {
+                        const existing = gameData.factions.find(f => f.name.toLowerCase() === newFaction.name.toLowerCase());
+                        if (existing) {
+                            // Update existing faction
+                            Object.assign(existing, newFaction);
+                        } else {
+                            // Add new faction
+                            gameData.factions.push(newFaction);
+                        }
+                    });
+                }
+
+                if (Array.isArray(aiResponse.worldEvents) && aiResponse.worldEvents.length > 0) {
+                    aiResponse.worldEvents.forEach(newEvent => {
+                        // Always add events (they're chronological)
+                        gameData.worldEvents.push(newEvent);
+                    });
                 }
 
                                 let narrative = aiResponse.narrative;
