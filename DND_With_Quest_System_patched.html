@@ -734,6 +734,180 @@ textarea:focus {
 .skip-link:focus {
     top: 0;
 }
+
+/* Worldbuilding tabs */
+.world-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid var(--slate-700);
+    overflow-x: auto;
+}
+
+.world-tab {
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    color: var(--slate-400);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.world-tab:hover {
+    color: var(--slate-200);
+    background-color: rgba(100, 116, 139, 0.1);
+}
+
+.world-tab.active {
+    color: var(--blue-400);
+    border-bottom-color: var(--blue-400);
+}
+
+.world-tab-content {
+    display: none;
+}
+
+.world-tab-content.active {
+    display: block;
+}
+
+/* Location cards */
+.location-card {
+    background-color: var(--slate-700);
+    border-radius: 0.5rem;
+    border: 1px solid var(--slate-600);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.location-card:hover {
+    background-color: var(--slate-600);
+    border-color: var(--blue-500);
+}
+
+/* NPC cards */
+.npc-card {
+    background-color: var(--slate-700);
+    border-radius: 0.5rem;
+    border: 1px solid var(--slate-600);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.npc-card:hover {
+    background-color: var(--slate-600);
+    border-color: var(--purple-500);
+}
+
+.relationship-bar {
+    width: 100%;
+    height: 6px;
+    background-color: var(--slate-600);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.relationship-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.relationship-hostile { background-color: var(--red-500); }
+.relationship-unfriendly { background-color: var(--orange-400); }
+.relationship-neutral { background-color: var(--slate-400); }
+.relationship-friendly { background-color: var(--green-400); }
+.relationship-allied { background-color: var(--blue-400); }
+
+/* Lore entries */
+.lore-entry {
+    background-color: var(--slate-700);
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--purple-400);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lore-entry:hover {
+    background-color: var(--slate-600);
+}
+
+/* Faction cards */
+.faction-card {
+    background-color: var(--slate-700);
+    border-radius: 0.5rem;
+    border: 1px solid var(--slate-600);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.faction-card:hover {
+    background-color: var(--slate-600);
+    border-color: var(--yellow-400);
+}
+
+/* Timeline events */
+.timeline-event {
+    position: relative;
+    padding-left: 1.5rem;
+    padding-bottom: 1rem;
+    border-left: 2px solid var(--slate-600);
+    margin-bottom: 0.5rem;
+}
+
+.timeline-event:last-child {
+    border-left-color: transparent;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -5px;
+    top: 0.5rem;
+    width: 10px;
+    height: 10px;
+    background-color: var(--blue-400);
+    border-radius: 50%;
+}
+
+/* Note cards */
+.note-card {
+    background-color: var(--slate-700);
+    border-radius: 0.5rem;
+    border: 1px solid var(--slate-600);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.note-card:hover {
+    background-color: var(--slate-600);
+    border-color: var(--green-400);
+}
+
+/* Weather icon */
+.weather-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background-color: rgba(59, 130, 246, 0.1);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--blue-400);
+}
     </style>
 </head>
 <body>
@@ -1072,6 +1246,71 @@ textarea:focus {
                     <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">Roll History</h3>
                     <div id="rollHistoryList"></div>
                 </div>
+
+                <!-- WORLDBUILDING PANEL -->
+                <div class="card">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">🌍 World Knowledge</h3>
+
+                    <div class="world-tabs" role="tablist">
+                        <button class="world-tab active" data-tab="locations" role="tab" aria-selected="true">📍 Places</button>
+                        <button class="world-tab" data-tab="npcs" role="tab" aria-selected="false">👥 NPCs</button>
+                        <button class="world-tab" data-tab="lore" role="tab" aria-selected="false">📜 Lore</button>
+                        <button class="world-tab" data-tab="factions" role="tab" aria-selected="false">⚔️ Factions</button>
+                        <button class="world-tab" data-tab="timeline" role="tab" aria-selected="false">📅 Timeline</button>
+                        <button class="world-tab" data-tab="notes" role="tab" aria-selected="false">📝 Notes</button>
+                    </div>
+
+                    <!-- Locations Tab -->
+                    <div id="tab-locations" class="world-tab-content active" role="tabpanel">
+                        <p style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.75rem;">
+                            Places you've discovered on your journey
+                        </p>
+                        <div id="locationsList"></div>
+                    </div>
+
+                    <!-- NPCs Tab -->
+                    <div id="tab-npcs" class="world-tab-content" role="tabpanel">
+                        <p style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.75rem;">
+                            People you've met and their relationships
+                        </p>
+                        <div id="npcsList"></div>
+                    </div>
+
+                    <!-- Lore Tab -->
+                    <div id="tab-lore" class="world-tab-content" role="tabpanel">
+                        <p style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.75rem;">
+                            Legends, history, and knowledge discovered
+                        </p>
+                        <div id="loreList"></div>
+                    </div>
+
+                    <!-- Factions Tab -->
+                    <div id="tab-factions" class="world-tab-content" role="tabpanel">
+                        <p style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.75rem;">
+                            Organizations and your standing with them
+                        </p>
+                        <div id="factionsList"></div>
+                    </div>
+
+                    <!-- Timeline Tab -->
+                    <div id="tab-timeline" class="world-tab-content" role="tabpanel">
+                        <p style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.75rem;">
+                            Major events in your adventure
+                        </p>
+                        <div id="timelineList"></div>
+                    </div>
+
+                    <!-- Notes Tab -->
+                    <div id="tab-notes" class="world-tab-content" role="tabpanel">
+                        <p style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.75rem;">
+                            Your personal notes and observations
+                        </p>
+                        <button id="addNoteBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 0.75rem;">
+                            ➕ Add Note
+                        </button>
+                        <div id="notesList"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Column: World / Combat / Log -->
@@ -1134,6 +1373,82 @@ textarea:focus {
                 <button id="questModalClose" class="modal-close" aria-label="Close quest modal">×</button>
             </div>
             <div id="questModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div id="locationModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="locationModalTitle" style="font-size: 1.25rem; font-weight: bold;"></h3>
+                <button id="locationModalClose" class="modal-close" aria-label="Close location modal">×</button>
+            </div>
+            <div id="locationModalBody"></div>
+        </div>
+    </div>
+
+    <!-- NPC Modal -->
+    <div id="npcModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="npcModalTitle" style="font-size: 1.25rem; font-weight: bold;"></h3>
+                <button id="npcModalClose" class="modal-close" aria-label="Close NPC modal">×</button>
+            </div>
+            <div id="npcModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Lore Modal -->
+    <div id="loreModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="loreModalTitle" style="font-size: 1.25rem; font-weight: bold;"></h3>
+                <button id="loreModalClose" class="modal-close" aria-label="Close lore modal">×</button>
+            </div>
+            <div id="loreModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Faction Modal -->
+    <div id="factionModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="factionModalTitle" style="font-size: 1.25rem; font-weight: bold;"></h3>
+                <button id="factionModalClose" class="modal-close" aria-label="Close faction modal">×</button>
+            </div>
+            <div id="factionModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <div id="addNoteModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 1.25rem; font-weight: bold;">Add New Note</h3>
+                <button id="addNoteModalClose" class="modal-close" aria-label="Close add note modal">×</button>
+            </div>
+            <div style="padding: 1rem 0;">
+                <div class="input-group">
+                    <label for="noteTitle">Title</label>
+                    <input type="text" id="noteTitle" placeholder="Note title..." required>
+                </div>
+                <div class="input-group">
+                    <label for="noteCategory">Category</label>
+                    <select id="noteCategory">
+                        <option value="general">General</option>
+                        <option value="quest">Quest Related</option>
+                        <option value="npc">NPC Information</option>
+                        <option value="location">Location Details</option>
+                        <option value="strategy">Strategy</option>
+                        <option value="lore">Lore & Story</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="noteContent">Content</label>
+                    <textarea id="noteContent" rows="6" placeholder="Your notes..." required></textarea>
+                </div>
+                <button id="saveNoteBtn" class="btn btn-primary" style="width: 100%;">Save Note</button>
+            </div>
         </div>
     </div>
 
@@ -1588,14 +1903,23 @@ ${text}`;
                 narrative: "",
                 location: "Unknown",
                 // SECTION 4 (WORLD/TIME): simple clock
-                worldTime: { day: 1, hour: 8 }
+                worldTime: { day: 1, hour: 8 },
+                weather: "Clear", // Current weather
+                season: "Spring" // Current season
             },
             adventurePreferences: null,
             messages: [],
             hasOpening: false,
             quests: [], // SECTION 9: quest list
             questOffers: [], // SECTION 9: pending quest offers from NPCs
-            rollHistory: [] // SECTION 10: dice roll history
+            rollHistory: [], // SECTION 10: dice roll history
+            // WORLDBUILDING SYSTEMS:
+            locationHistory: [], // { name, description, firstVisited, lastVisited, visitCount }
+            npcs: [], // { name, description, relationship, relationshipValue, location, notes }
+            lore: [], // { title, content, category, discoveredAt }
+            factions: [], // { name, description, reputation, reputationValue, rank }
+            worldEvents: [], // { title, description, day, hour, location }
+            playerNotes: [] // { title, content, category, createdAt }
         };
 
         // Point buy state
@@ -1683,7 +2007,44 @@ ${text}`;
                 gameData.rollHistory = safeParse(savedRolls) || gameData.rollHistory;
                 console.log('Loaded roll history');
             }
-            
+
+            // Load worldbuilding data
+            const savedLocations = localStorage.getItem('dnd_location_history');
+            if (savedLocations) {
+                gameData.locationHistory = safeParse(savedLocations) || gameData.locationHistory;
+                console.log('Loaded location history');
+            }
+
+            const savedNPCs = localStorage.getItem('dnd_npcs');
+            if (savedNPCs) {
+                gameData.npcs = safeParse(savedNPCs) || gameData.npcs;
+                console.log('Loaded NPCs');
+            }
+
+            const savedLore = localStorage.getItem('dnd_lore');
+            if (savedLore) {
+                gameData.lore = safeParse(savedLore) || gameData.lore;
+                console.log('Loaded lore');
+            }
+
+            const savedFactions = localStorage.getItem('dnd_factions');
+            if (savedFactions) {
+                gameData.factions = safeParse(savedFactions) || gameData.factions;
+                console.log('Loaded factions');
+            }
+
+            const savedEvents = localStorage.getItem('dnd_world_events');
+            if (savedEvents) {
+                gameData.worldEvents = safeParse(savedEvents) || gameData.worldEvents;
+                console.log('Loaded world events');
+            }
+
+            const savedNotes = localStorage.getItem('dnd_player_notes');
+            if (savedNotes) {
+                gameData.playerNotes = safeParse(savedNotes) || gameData.playerNotes;
+                console.log('Loaded player notes');
+            }
+
             console.log('Finished loading saved data');
         }
 
@@ -1696,6 +2057,13 @@ ${text}`;
             localStorage.setItem('dnd_quests', JSON.stringify(gameData.quests || []));
             localStorage.setItem('dnd_quest_offers', JSON.stringify(gameData.questOffers || []));
             localStorage.setItem('dnd_roll_history', JSON.stringify(gameData.rollHistory || []));
+            // Persist worldbuilding data
+            localStorage.setItem('dnd_location_history', JSON.stringify(gameData.locationHistory || []));
+            localStorage.setItem('dnd_npcs', JSON.stringify(gameData.npcs || []));
+            localStorage.setItem('dnd_lore', JSON.stringify(gameData.lore || []));
+            localStorage.setItem('dnd_factions', JSON.stringify(gameData.factions || []));
+            localStorage.setItem('dnd_world_events', JSON.stringify(gameData.worldEvents || []));
+            localStorage.setItem('dnd_player_notes', JSON.stringify(gameData.playerNotes || []));
         }
 
         // =====================================================================
@@ -2418,6 +2786,383 @@ ${text}`;
                 result.push(item);
             }
             return result;
+        }
+
+        // =====================================================================
+        // WORLDBUILDING SYSTEMS: LOCATIONS, NPCS, LORE, FACTIONS, TIMELINE, NOTES
+        // =====================================================================
+
+        // Track location visits
+        function trackLocation(locationName, description) {
+            if (!locationName) return;
+
+            const existing = gameData.locationHistory.find(l => l.name.toLowerCase() === locationName.toLowerCase());
+            const now = gameData.gameState.worldTime;
+
+            if (existing) {
+                existing.visitCount = (existing.visitCount || 1) + 1;
+                existing.lastVisited = `Day ${now.day}, ${now.hour}:00`;
+            } else {
+                gameData.locationHistory.push({
+                    name: locationName,
+                    description: description || 'A place you have visited.',
+                    firstVisited: `Day ${now.day}, ${now.hour}:00`,
+                    lastVisited: `Day ${now.day}, ${now.hour}:00`,
+                    visitCount: 1
+                });
+            }
+            updateLocationsList();
+        }
+
+        function updateLocationsList() {
+            const list = document.getElementById('locationsList');
+            if (!list) return;
+
+            const locations = gameData.locationHistory || [];
+            if (locations.length === 0) {
+                list.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No locations discovered yet.</p>';
+                return;
+            }
+
+            list.innerHTML = locations.map((loc, index) => `
+                <div class="location-card" onclick="showLocationModal(${index})" role="button" tabindex="0">
+                    <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(loc.name)}</div>
+                    <div style="font-size: 0.75rem; color: var(--slate-400);">
+                        Visited ${loc.visitCount || 1} time${loc.visitCount > 1 ? 's' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showLocationModal(index) {
+            const location = gameData.locationHistory[index];
+            if (!location) return;
+
+            const modal = document.getElementById('locationModal');
+            const title = document.getElementById('locationModalTitle');
+            const body = document.getElementById('locationModalBody');
+
+            title.textContent = location.name;
+            body.innerHTML = `
+                <div class="property-row">
+                    <span class="property-label">First Visited</span>
+                    <span class="property-value">${location.firstVisited}</span>
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Last Visited</span>
+                    <span class="property-value">${location.lastVisited}</span>
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Visits</span>
+                    <span class="property-value">${location.visitCount || 1}</span>
+                </div>
+                ${location.description ? `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${escapeHtml(location.description)}</p>
+                    </div>
+                ` : ''}
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        // NPC Tracking
+        function updateNPCsList() {
+            const list = document.getElementById('npcsList');
+            if (!list) return;
+
+            const npcs = gameData.npcs || [];
+            if (npcs.length === 0) {
+                list.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No NPCs met yet.</p>';
+                return;
+            }
+
+            list.innerHTML = npcs.map((npc, index) => {
+                const relValue = npc.relationshipValue || 0;
+                let relClass = 'relationship-neutral';
+                let relText = 'Neutral';
+
+                if (relValue <= -50) { relClass = 'relationship-hostile'; relText = 'Hostile'; }
+                else if (relValue < 0) { relClass = 'relationship-unfriendly'; relText = 'Unfriendly'; }
+                else if (relValue > 50) { relClass = 'relationship-allied'; relText = 'Allied'; }
+                else if (relValue > 0) { relClass = 'relationship-friendly'; relText = 'Friendly'; }
+
+                const percentage = Math.min(100, Math.max(0, relValue + 50));
+
+                return `
+                    <div class="npc-card" onclick="showNPCModal(${index})" role="button" tabindex="0">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(npc.name)}</div>
+                        <div style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.5rem;">
+                            ${npc.location ? escapeHtml(npc.location) : 'Location unknown'}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                            <span style="color: var(--slate-300);">${relText}</span>
+                            <span style="color: var(--slate-400);">${relValue}</span>
+                        </div>
+                        <div class="relationship-bar">
+                            <div class="relationship-fill ${relClass}" style="width: ${percentage}%;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showNPCModal(index) {
+            const npc = gameData.npcs[index];
+            if (!npc) return;
+
+            const modal = document.getElementById('npcModal');
+            const title = document.getElementById('npcModalTitle');
+            const body = document.getElementById('npcModalBody');
+
+            const relValue = npc.relationshipValue || 0;
+            let relText = 'Neutral';
+            if (relValue <= -50) relText = 'Hostile';
+            else if (relValue < 0) relText = 'Unfriendly';
+            else if (relValue > 50) relText = 'Allied';
+            else if (relValue > 0) relText = 'Friendly';
+
+            title.textContent = npc.name;
+            body.innerHTML = `
+                <div class="property-row">
+                    <span class="property-label">Relationship</span>
+                    <span class="property-value">${relText} (${relValue})</span>
+                </div>
+                ${npc.location ? `
+                    <div class="property-row">
+                        <span class="property-label">Location</span>
+                        <span class="property-value">${escapeHtml(npc.location)}</span>
+                    </div>
+                ` : ''}
+                ${npc.description ? `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${escapeHtml(npc.description)}</p>
+                    </div>
+                ` : ''}
+                ${npc.notes ? `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Notes</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${escapeHtml(npc.notes)}</p>
+                    </div>
+                ` : ''}
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        // Lore System
+        function updateLoreList() {
+            const list = document.getElementById('loreList');
+            if (!list) return;
+
+            const lore = gameData.lore || [];
+            if (lore.length === 0) {
+                list.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No lore discovered yet.</p>';
+                return;
+            }
+
+            list.innerHTML = lore.map((entry, index) => `
+                <div class="lore-entry" onclick="showLoreModal(${index})" role="button" tabindex="0">
+                    <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(entry.title)}</div>
+                    <div style="font-size: 0.75rem; color: var(--slate-400);">
+                        ${entry.category ? escapeHtml(entry.category) : 'Uncategorized'} • ${entry.discoveredAt || 'Unknown time'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showLoreModal(index) {
+            const lore = gameData.lore[index];
+            if (!lore) return;
+
+            const modal = document.getElementById('loreModal');
+            const title = document.getElementById('loreModalTitle');
+            const body = document.getElementById('loreModalBody');
+
+            title.textContent = lore.title;
+            body.innerHTML = `
+                <div class="property-row">
+                    <span class="property-label">Category</span>
+                    <span class="property-value">${lore.category || 'Uncategorized'}</span>
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Discovered</span>
+                    <span class="property-value">${lore.discoveredAt || 'Unknown'}</span>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Content</h4>
+                    <p style="font-size: 0.875rem; color: var(--slate-200); line-height: 1.6;">${escapeHtml(lore.content)}</p>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        // Faction System
+        function updateFactionsList() {
+            const list = document.getElementById('factionsList');
+            if (!list) return;
+
+            const factions = gameData.factions || [];
+            if (factions.length === 0) {
+                list.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No factions known yet.</p>';
+                return;
+            }
+
+            list.innerHTML = factions.map((faction, index) => {
+                const repValue = faction.reputationValue || 0;
+                let repText = 'Neutral';
+                let repColor = 'var(--slate-400)';
+
+                if (repValue <= -50) { repText = 'Hostile'; repColor = 'var(--red-400)'; }
+                else if (repValue < 0) { repText = 'Unfriendly'; repColor = 'var(--orange-400)'; }
+                else if (repValue > 50) { repText = 'Exalted'; repColor = 'var(--blue-400)'; }
+                else if (repValue > 0) { repText = 'Friendly'; repColor = 'var(--green-400)'; }
+
+                return `
+                    <div class="faction-card" onclick="showFactionModal(${index})" role="button" tabindex="0">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(faction.name)}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                            <span style="color: ${repColor};">${repText}</span>
+                            <span style="color: var(--slate-400);">${repValue}</span>
+                        </div>
+                        ${faction.rank ? `<div style="font-size: 0.75rem; color: var(--slate-400); margin-top: 0.25rem;">Rank: ${escapeHtml(faction.rank)}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showFactionModal(index) {
+            const faction = gameData.factions[index];
+            if (!faction) return;
+
+            const modal = document.getElementById('factionModal');
+            const title = document.getElementById('factionModalTitle');
+            const body = document.getElementById('factionModalBody');
+
+            const repValue = faction.reputationValue || 0;
+            let repText = 'Neutral';
+            if (repValue <= -50) repText = 'Hostile';
+            else if (repValue < 0) repText = 'Unfriendly';
+            else if (repValue > 50) repText = 'Exalted';
+            else if (repValue > 0) repText = 'Friendly';
+
+            title.textContent = faction.name;
+            body.innerHTML = `
+                <div class="property-row">
+                    <span class="property-label">Reputation</span>
+                    <span class="property-value">${repText} (${repValue})</span>
+                </div>
+                ${faction.rank ? `
+                    <div class="property-row">
+                        <span class="property-label">Rank</span>
+                        <span class="property-value">${escapeHtml(faction.rank)}</span>
+                    </div>
+                ` : ''}
+                ${faction.description ? `
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--slate-300); margin-bottom: 0.5rem;">Description</h4>
+                        <p style="font-size: 0.875rem; color: var(--slate-200);">${escapeHtml(faction.description)}</p>
+                    </div>
+                ` : ''}
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        // Timeline System
+        function updateTimelineList() {
+            const list = document.getElementById('timelineList');
+            if (!list) return;
+
+            const events = gameData.worldEvents || [];
+            if (events.length === 0) {
+                list.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No major events yet.</p>';
+                return;
+            }
+
+            // Sort by day/hour (most recent first)
+            const sortedEvents = [...events].sort((a, b) => {
+                const aTime = (a.day || 0) * 24 + (a.hour || 0);
+                const bTime = (b.day || 0) * 24 + (b.hour || 0);
+                return bTime - aTime;
+            });
+
+            list.innerHTML = sortedEvents.map(event => `
+                <div class="timeline-event">
+                    <div class="timeline-dot"></div>
+                    <div style="font-size: 0.75rem; color: var(--slate-400); margin-bottom: 0.25rem;">
+                        Day ${event.day || 1}, ${String(event.hour || 0).padStart(2, '0')}:00
+                        ${event.location ? ` • ${escapeHtml(event.location)}` : ''}
+                    </div>
+                    <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(event.title)}</div>
+                    ${event.description ? `<div style="font-size: 0.875rem; color: var(--slate-300);">${escapeHtml(event.description)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Notes System
+        function updateNotesList() {
+            const list = document.getElementById('notesList');
+            if (!list) return;
+
+            const notes = gameData.playerNotes || [];
+            if (notes.length === 0) {
+                list.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No notes yet.</p>';
+                return;
+            }
+
+            // Group by category
+            const categories = {};
+            notes.forEach(note => {
+                const cat = note.category || 'general';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(note);
+            });
+
+            let html = '';
+            for (const cat in categories) {
+                html += `<div style="margin-bottom: 1rem;">
+                    <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--slate-400); margin-bottom: 0.5rem;">${cat}</h4>`;
+                html += categories[cat].map((note, noteIndex) => {
+                    const globalIndex = notes.indexOf(note);
+                    return `
+                        <div class="note-card" role="button" tabindex="0">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(note.title)}</div>
+                                    <div style="font-size: 0.875rem; color: var(--slate-300); line-height: 1.4;">
+                                        ${escapeHtml(note.content.substring(0, 100))}${note.content.length > 100 ? '...' : ''}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--slate-400); margin-top: 0.25rem;">
+                                        ${note.createdAt || 'No date'}
+                                    </div>
+                                </div>
+                                <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-left: 0.5rem;" onclick="deleteNote(${globalIndex}); event.stopPropagation();">×</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                html += '</div>';
+            }
+
+            list.innerHTML = html;
+        }
+
+        function deleteNote(index) {
+            if (confirm('Delete this note?')) {
+                gameData.playerNotes.splice(index, 1);
+                updateNotesList();
+                persistGame();
+            }
+        }
+
+        // Update all worldbuilding displays
+        function updateWorldKnowledge() {
+            updateLocationsList();
+            updateNPCsList();
+            updateLoreList();
+            updateFactionsList();
+            updateTimelineList();
+            updateNotesList();
         }
 
         // =====================================================================
