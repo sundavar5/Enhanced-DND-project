@@ -631,9 +631,120 @@ body {
 .save-menu button:hover {
     background-color: var(--slate-700);
 }
+
+/* Spoiler text styling */
+.spoiler-text {
+    background-color: var(--slate-400);
+    color: var(--slate-400);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.spoiler-text:hover {
+    color: white;
+}
+
+/* Dice roll animation */
+@keyframes diceRoll {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(90deg); }
+    50% { transform: rotate(180deg); }
+    75% { transform: rotate(270deg); }
+}
+
+.dice-rolling {
+    display: inline-block;
+    animation: diceRoll 0.5s ease-in-out;
+}
+
+/* Auto-save indicator */
+.auto-save-indicator {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--green-500);
+    color: white;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.auto-save-indicator.show {
+    opacity: 1;
+}
+
+/* Search box styling */
+.search-box {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    background-color: var(--slate-700);
+    border: 1px solid var(--slate-600);
+    border-radius: 0.375rem;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Keyboard shortcut hint */
+.keyboard-hint {
+    font-size: 0.75rem;
+    color: var(--slate-400);
+    margin-top: 0.5rem;
+}
+
+/* Highlight search results */
+.search-highlight {
+    background-color: var(--yellow-400);
+    color: var(--slate-900);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+}
+
+/* Better focus indicators for accessibility */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid var(--blue-500);
+    outline-offset: 2px;
+}
+
+/* Skip to main content link for accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--blue-600);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
     </style>
 </head>
 <body>
+    <!-- Accessibility: Skip to main content -->
+    <a href="#gameScreen" class="skip-link">Skip to main content</a>
+
+    <!-- Auto-save indicator -->
+    <div id="autoSaveIndicator" class="auto-save-indicator">
+        ✓ Game auto-saved
+    </div>
+
     <!--
     ========================================================================
     SECTION 6: UI LAYOUT – SCREENS & CARDS
@@ -889,11 +1000,13 @@ body {
     <div id="gameScreen" class="container hidden">
         <header style="margin-bottom: 1.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                <div style="flex: 1;"></div>
+                <div style="flex: 1;">
+                    <button id="helpBtn" class="btn btn-secondary" aria-label="Show help and keyboard shortcuts" title="Show help (Press ?)">❓ Help</button>
+                </div>
                 <h1 style="text-align: center; font-size: 1.5rem; font-weight: bold;">D&D - AI Dungeon Master</h1>
-                <div style="flex: 1; display: flex; justify-content: flex-end;">
+                <div style="flex: 1; display: flex; justify-content: flex-end; gap: 0.5rem;">
                     <div style="position: relative;">
-                        <button id="saveMenuBtn" class="btn btn-secondary">💾 Save</button>
+                        <button id="saveMenuBtn" class="btn btn-secondary" aria-label="Save menu">💾 Save</button>
                         <div id="saveMenu" class="save-menu hidden">
                             <button id="exportBtn">📥 Export Save</button>
                             <button id="importBtn">📤 Import Save</button>
@@ -937,7 +1050,15 @@ body {
                 <!-- Inventory -->
                 <div class="card">
                     <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">Inventory</h3>
-                    <div id="inventoryList"></div>
+                    <input
+                        type="text"
+                        id="inventorySearch"
+                        class="search-box"
+                        placeholder="Search inventory..."
+                        aria-label="Search inventory items"
+                    />
+                    <div id="inventoryList" role="list" aria-label="Inventory items"></div>
+                    <p class="keyboard-hint">💡 Tip: Press '/' to quickly search inventory</p>
                 </div>
 
                 <!-- SECTION 9 (UI PART): Quest log panel -->
@@ -978,16 +1099,17 @@ body {
                     <div class="log-container" id="messageLog"></div>
 
                     <div class="flex gap-2 flex-wrap mb-4">
-                        <button id="rollD20Btn" class="btn btn-secondary">🎲 Roll D20</button>
-                        <button id="rollAdvBtn" class="btn btn-secondary" style="background-color: var(--green-500);">↗️ Advantage</button>
-                        <button id="rollDisBtn" class="btn btn-secondary" style="background-color: var(--red-500);">↘️ Disadvantage</button>
-                        <button id="perceptionBtn" class="btn btn-secondary">Perception Check</button>
+                        <button id="rollD20Btn" class="btn btn-secondary" aria-label="Roll a d20 dice" title="Press 'R' to roll">🎲 Roll D20</button>
+                        <button id="rollAdvBtn" class="btn btn-secondary" style="background-color: var(--green-500);" aria-label="Roll with advantage">↗️ Advantage</button>
+                        <button id="rollDisBtn" class="btn btn-secondary" style="background-color: var(--red-500);" aria-label="Roll with disadvantage">↘️ Disadvantage</button>
+                        <button id="perceptionBtn" class="btn btn-secondary" aria-label="Make a perception check" title="Press 'P' for perception">Perception Check</button>
                     </div>
 
                     <div style="display: flex; gap: 0.5rem;">
-                        <textarea id="actionInput" placeholder="Describe your action..." style="flex: 1; min-height: 100px; background-color: var(--slate-700); border: 1px solid var(--slate-600); color: white; padding: 0.5rem; border-radius: 0.375rem; resize: vertical;"></textarea>
-                        <button id="sendBtn" class="btn btn-primary" style="align-self: flex-end; padding: 0.5rem 1rem;">Send</button>
+                        <textarea id="actionInput" placeholder="Describe your action..." aria-label="Action input" style="flex: 1; min-height: 100px; background-color: var(--slate-700); border: 1px solid var(--slate-600); color: white; padding: 0.5rem; border-radius: 0.375rem; resize: vertical;"></textarea>
+                        <button id="sendBtn" class="btn btn-primary" aria-label="Send action" title="Press Enter to send" style="align-self: flex-end; padding: 0.5rem 1rem;">Send</button>
                     </div>
+                    <p class="keyboard-hint">💡 Tip: Press Enter to send, '?' for help, 'R' to roll, 'P' for perception</p>
                 </div>
             </div>
         </div>
@@ -1009,9 +1131,77 @@ body {
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="questModalTitle" style="font-size: 1.25rem; font-weight: bold;"></h3>
-                <button id="questModalClose" class="modal-close">×</button>
+                <button id="questModalClose" class="modal-close" aria-label="Close quest modal">×</button>
             </div>
             <div id="questModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 1.25rem; font-weight: bold;">Keyboard Shortcuts & Help</h3>
+                <button id="helpModalClose" class="modal-close" aria-label="Close help modal">×</button>
+            </div>
+            <div style="max-height: 60vh; overflow-y: auto;">
+                <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--blue-400);">⌨️ Keyboard Shortcuts</h4>
+                <div style="margin-bottom: 1.5rem;">
+                    <div class="property-row">
+                        <span class="property-label"><kbd>/</kbd></span>
+                        <span class="property-value">Focus inventory search</span>
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label"><kbd>R</kbd></span>
+                        <span class="property-value">Roll d20</span>
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label"><kbd>P</kbd></span>
+                        <span class="property-value">Perception check</span>
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label"><kbd>ESC</kbd></span>
+                        <span class="property-value">Close modals</span>
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label"><kbd>?</kbd></span>
+                        <span class="property-value">Show this help</span>
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label"><kbd>Enter</kbd></span>
+                        <span class="property-value">Send action (in text box)</span>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--green-400);">💡 Features</h4>
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.875rem; color: var(--slate-300); margin-bottom: 0.5rem;">
+                        <strong>Auto-Save:</strong> Your game automatically saves every 30 seconds and after each action.
+                    </p>
+                    <p style="font-size: 0.875rem; color: var(--slate-300); margin-bottom: 0.5rem;">
+                        <strong>Search:</strong> Use the search box to quickly find items in your inventory.
+                    </p>
+                    <p style="font-size: 0.875rem; color: var(--slate-300); margin-bottom: 0.5rem;">
+                        <strong>Export/Import:</strong> Save your game to a file using the save menu, or import a previous save.
+                    </p>
+                    <p style="font-size: 0.875rem; color: var(--slate-300); margin-bottom: 0.5rem;">
+                        <strong>Click Items:</strong> Click on inventory items or quests to see more details.
+                    </p>
+                </div>
+
+                <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--purple-400);">🎲 Text Formatting</h4>
+                <div>
+                    <p style="font-size: 0.875rem; color: var(--slate-300); margin-bottom: 0.5rem;">
+                        The DM can use special formatting in messages:
+                    </p>
+                    <ul style="font-size: 0.875rem; color: var(--slate-400); margin-left: 1.5rem; list-style: disc;">
+                        <li><code>**bold**</code> for <strong>bold text</strong></li>
+                        <li><code>*italic*</code> for <em>italic text</em></li>
+                        <li><code>[red]text[/red]</code> for <span class="color-red">colored text</span></li>
+                        <li><code>[spoiler]text[/spoiler]</code> for hidden text (hover to reveal)</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1515,9 +1705,23 @@ ${text}`;
         //   - parseFormattedText maps simple markup to CSS classes.
         //   - You can add more tags here if needed (e.g. [spoiler][/spoiler]).
         //   - getModifier/formatModifier implement standard D&D 5e-style mods.
+        //   - SECURITY: Now includes HTML escaping to prevent XSS attacks
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return unsafe;
+            return String(unsafe)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         function parseFormattedText(text) {
             if (!text) return text;
+
+            // First, escape any HTML to prevent XSS
+            text = escapeHtml(text);
 
             // Bold italic
             text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<span class="text-bold text-italic">$1</span>');
@@ -1529,8 +1733,8 @@ ${text}`;
             text = text.replace(/__(.*?)__/g, '<span class="text-underline">$1</span>');
             // Strikethrough
             text = text.replace(/~~(.*?)~~/g, '<span style="text-decoration: line-through;">$1</span>');
-            // Spoiler (hidden until hover)
-            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span style="background-color: var(--slate-400); color: var(--slate-400); cursor: pointer;" onmouseover="this.style.color=&quot;white&quot;" onmouseout="this.style.color=&quot;var(--slate-400)&quot;">$1</span>');
+            // Spoiler (hidden until hover) - using class instead of inline handlers
+            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<span class="spoiler-text" title="Hover to reveal">$1</span>');
             // Highlight
             text = text.replace(/\[highlight\](.*?)\[\/highlight\]/g, '<span style="background-color: rgba(250, 204, 21, 0.3); padding: 0.125rem 0.25rem; border-radius: 0.25rem;">$1</span>');
             // Colors
@@ -1664,35 +1868,10 @@ ${text}`;
                 </div>
             `;
 
-            const inventoryList = document.getElementById('inventoryList');
-            const inv = char.inventory || [];
-            if (inv.length === 0) {
-                inventoryList.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No items yet</p>';
-            } else {
-                inventoryList.innerHTML = '';
-                inv.forEach((item, index) => {
-                    if (!item || !item.name) return; // Skip invalid items
-
-                    const rarityClass = item.rarity ? `rarity-${item.rarity.toLowerCase().replace(/\s+/g, '')}` : 'rarity-common';
-
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = `inventory-item ${rarityClass}`;
-                    itemDiv.style.cursor = 'pointer';
-                    itemDiv.onclick = function() { showItemModal(index); };
-
-                    itemDiv.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <p style="font-weight: 500;">${item.name}</p>
-                                ${item.quantity && item.quantity > 1 ? `<p style="font-size: 0.75rem; color: var(--slate-400);">Quantity: ${item.quantity}</p>` : ''}
-                            </div>
-                            ${item.rarity ? `<span class="badge badge-rarity">${item.rarity}</span>` : ''}
-                        </div>
-                    `;
-
-                    inventoryList.appendChild(itemDiv);
-                });
-            }
+            // Use the new filterInventory function which supports search
+            const searchBox = document.getElementById('inventorySearch');
+            const searchTerm = searchBox ? searchBox.value.toLowerCase().trim() : '';
+            filterInventory(searchTerm);
 
             updateQuestList();
         }
@@ -3021,23 +3200,28 @@ Your ENTIRE response must be ONLY this JSON object.`;
 
         document.getElementById('apiForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
+            // Validate form
+            if (!validateApiForm()) {
+                return;
+            }
+
             try {
                 console.log('API form submitted');
-                
+
                 gameData.apiConfig = {
                     apiKey: document.getElementById('apiKey').value.trim(),
                     baseURL: document.getElementById('baseURL').value.trim(),
                     model: document.getElementById('model').value.trim()
                 };
-                
+
                 localStorage.setItem('dnd_api_config', JSON.stringify(gameData.apiConfig));
                 console.log('API config saved to localStorage');
-                
+
                 document.getElementById('apiSetup').classList.add('hidden');
                 document.getElementById('characterCreation').classList.remove('hidden');
                 console.log('Switched to character creation screen');
-                
+
                 // Initialize point buy system when character creation shows
                 setTimeout(() => {
                     try {
@@ -3047,7 +3231,7 @@ Your ENTIRE response must be ONLY this JSON object.`;
                         console.error('Error initializing point buy:', error);
                     }
                 }, 100);
-                
+
             } catch (error) {
                 console.error('Error in API form submission:', error);
                 alert('Error saving API configuration. Please try again.');
@@ -3056,6 +3240,12 @@ Your ENTIRE response must be ONLY this JSON object.`;
 
         document.getElementById('characterForm').addEventListener('submit', (e) => {
             e.preventDefault();
+
+            // Validate form
+            if (!validateCharacterForm()) {
+                return;
+            }
+
             const level = parseInt(document.getElementById('charLevel').value, 10);
             const cls = document.getElementById('charClass').value;
 
@@ -3070,11 +3260,11 @@ Your ENTIRE response must be ONLY this JSON object.`;
             };
 
             gameData.character = {
-                name: document.getElementById('charName').value,
+                name: document.getElementById('charName').value.trim(),
                 race: document.getElementById('charRace').value,
                 class: cls,
                 level: level,
-                backstory: document.getElementById('charBackstory').value,
+                backstory: document.getElementById('charBackstory').value.trim(),
                 hp: 8 + level * 5,
                 maxHp: 8 + level * 5,
                 ac: 10 + Math.floor(level / 2),
@@ -3224,6 +3414,21 @@ Your ENTIRE response must be ONLY this JSON object.`;
             }
         });
 
+        // Help modal
+        document.getElementById('helpBtn')?.addEventListener('click', () => {
+            document.getElementById('helpModal').classList.remove('hidden');
+        });
+
+        document.getElementById('helpModalClose').addEventListener('click', () => {
+            document.getElementById('helpModal').classList.add('hidden');
+        });
+
+        document.getElementById('helpModal').addEventListener('click', (e) => {
+            if (e.target.id === 'helpModal') {
+                document.getElementById('helpModal').classList.add('hidden');
+            }
+        });
+
         // Save menu
         document.getElementById('saveMenuBtn').addEventListener('click', () => {
             document.getElementById('saveMenu').classList.toggle('hidden');
@@ -3291,6 +3496,201 @@ Your ENTIRE response must be ONLY this JSON object.`;
             }
         });
 
+        // =====================================================================
+        // NEW FEATURES: AUTO-SAVE, SEARCH, KEYBOARD SHORTCUTS
+        // =====================================================================
+
+        // Auto-save functionality
+        let autoSaveTimer = null;
+        function showAutoSaveIndicator() {
+            const indicator = document.getElementById('autoSaveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        function scheduleAutoSave() {
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                persistGame();
+                showAutoSaveIndicator();
+            }, 30000); // Auto-save every 30 seconds
+        }
+
+        // Start auto-save when game begins
+        function startAutoSave() {
+            scheduleAutoSave();
+            // Also save on every major action
+            const originalSendAction = sendAction;
+            window.sendAction = async function(action) {
+                await originalSendAction(action);
+                scheduleAutoSave();
+            };
+        }
+
+        // Inventory search functionality
+        let inventorySearchTimeout = null;
+        document.getElementById('inventorySearch')?.addEventListener('input', (e) => {
+            clearTimeout(inventorySearchTimeout);
+            inventorySearchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                filterInventory(searchTerm);
+            }, 300);
+        });
+
+        function filterInventory(searchTerm) {
+            const char = gameData.character;
+            if (!char || !char.inventory) return;
+
+            const inventoryList = document.getElementById('inventoryList');
+            const inv = char.inventory;
+
+            if (inv.length === 0) {
+                inventoryList.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No items yet</p>';
+                return;
+            }
+
+            const filteredItems = searchTerm
+                ? inv.filter(item => item && item.name && item.name.toLowerCase().includes(searchTerm))
+                : inv;
+
+            if (filteredItems.length === 0) {
+                inventoryList.innerHTML = '<p style="font-size: 0.875rem; color: var(--slate-400); text-align: center; padding: 1rem;">No matching items found</p>';
+                return;
+            }
+
+            inventoryList.innerHTML = '';
+            filteredItems.forEach((item) => {
+                const originalIndex = inv.indexOf(item);
+                if (!item || !item.name) return;
+
+                const rarityClass = item.rarity ? `rarity-${item.rarity.toLowerCase().replace(/\s+/g, '')}` : 'rarity-common';
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `inventory-item ${rarityClass}`;
+                itemDiv.style.cursor = 'pointer';
+                itemDiv.setAttribute('role', 'listitem');
+                itemDiv.setAttribute('tabindex', '0');
+                itemDiv.setAttribute('aria-label', `${item.name}, ${item.rarity || 'common'} rarity`);
+
+                itemDiv.addEventListener('click', () => showItemModal(originalIndex));
+                itemDiv.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        showItemModal(originalIndex);
+                    }
+                });
+
+                let itemName = item.name;
+                if (searchTerm) {
+                    // Highlight search term
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    itemName = itemName.replace(regex, '<span class="search-highlight">$1</span>');
+                }
+
+                itemDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="font-weight: 500;">${itemName}</p>
+                            ${item.quantity && item.quantity > 1 ? `<p style="font-size: 0.75rem; color: var(--slate-400);">Quantity: ${item.quantity}</p>` : ''}
+                        </div>
+                        ${item.rarity ? `<span class="badge badge-rarity">${escapeHtml(item.rarity)}</span>` : ''}
+                    </div>
+                `;
+
+                inventoryList.appendChild(itemDiv);
+            });
+        }
+
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts when typing in inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                // Except for the '/' key to focus search
+                if (e.key === '/' && e.target.id !== 'inventorySearch') {
+                    e.preventDefault();
+                    document.getElementById('inventorySearch')?.focus();
+                }
+                return;
+            }
+
+            // Keyboard shortcuts
+            switch(e.key.toLowerCase()) {
+                case '/':
+                    e.preventDefault();
+                    document.getElementById('inventorySearch')?.focus();
+                    break;
+                case '?':
+                    e.preventDefault();
+                    document.getElementById('helpModal')?.classList.remove('hidden');
+                    break;
+                case 'r':
+                    if (e.ctrlKey || e.metaKey) break; // Don't interfere with refresh
+                    e.preventDefault();
+                    document.getElementById('rollD20Btn')?.click();
+                    break;
+                case 'p':
+                    e.preventDefault();
+                    document.getElementById('perceptionBtn')?.click();
+                    break;
+                case 'escape':
+                case 'esc':
+                    // Close any open modals
+                    document.getElementById('itemModal')?.classList.add('hidden');
+                    document.getElementById('questModal')?.classList.add('hidden');
+                    document.getElementById('helpModal')?.classList.add('hidden');
+                    break;
+            }
+        });
+
+        // Input validation for forms
+        function validateApiForm() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseURL = document.getElementById('baseURL').value.trim();
+
+            if (!apiKey || apiKey.length < 10) {
+                alert('Please enter a valid API key (at least 10 characters).');
+                return false;
+            }
+
+            if (baseURL && !baseURL.startsWith('http')) {
+                alert('Base URL must start with http:// or https://');
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateCharacterForm() {
+            const name = document.getElementById('charName').value.trim();
+            const backstory = document.getElementById('charBackstory').value.trim();
+
+            if (!name || name.length < 2) {
+                alert('Character name must be at least 2 characters long.');
+                return false;
+            }
+
+            if (name.length > 50) {
+                alert('Character name must be less than 50 characters.');
+                return false;
+            }
+
+            if (!backstory || backstory.length < 20) {
+                alert('Backstory must be at least 20 characters long to help the AI generate appropriate starting equipment.');
+                return false;
+            }
+
+            // Check if all points are spent
+            if (pointBuyState.pointsRemaining > 0) {
+                if (!confirm(`You have ${pointBuyState.pointsRemaining} unspent points. Continue anyway?`)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // Bootstrapping
         console.log('Starting bootstrap...');
         
@@ -3326,13 +3726,15 @@ Your ENTIRE response must be ONLY this JSON object.`;
                 updateGameState();
                 updateMessageLog();
                 updateRollHistory();
+                // Start auto-save for active games
+                startAutoSave();
             }
         } catch (error) {
             console.error('Error during bootstrap:', error);
             // Show API setup as fallback
             document.getElementById('apiSetup').classList.remove('hidden');
         }
-        
+
         console.log('Bootstrap complete');
     </script>
 </body>
