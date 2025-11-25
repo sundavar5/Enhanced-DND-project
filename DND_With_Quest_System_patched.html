@@ -2644,10 +2644,21 @@ ${text}`;
             const enemiesCard = document.getElementById('enemiesCard');
             const enemiesList = document.getElementById('enemiesList');
 
-            // Location
+            // Location with weather
             if (state.location) {
                 locationCard.classList.remove('hidden');
-                locationNameEl.textContent = state.location;
+                const weatherIcon = getWeatherIcon(state.weather || 'Clear');
+                const seasonIcon = getSeasonIcon(state.season || 'Spring');
+                locationNameEl.innerHTML = `
+                    <div style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">${escapeHtml(state.location)}</div>
+                    <div style="display: flex; gap: 0.75rem; font-size: 0.875rem;">
+                        <span class="weather-display">${weatherIcon} ${state.weather || 'Clear'}</span>
+                        <span class="weather-display" style="background-color: rgba(168, 85, 247, 0.1); color: var(--purple-400);">${seasonIcon} ${state.season || 'Spring'}</span>
+                    </div>
+                `;
+
+                // Track location visit
+                trackLocation(state.location);
             } else {
                 locationCard.classList.add('hidden');
             }
@@ -2680,8 +2691,36 @@ ${text}`;
                 enemiesList.innerHTML = '';
             }
 
+            // Update worldbuilding displays
+            updateWorldKnowledge();
+
             // Refresh header/time via character sheet
             updateCharacterSheet();
+        }
+
+        // Weather and season icons
+        function getWeatherIcon(weather) {
+            const icons = {
+                'Clear': '☀️',
+                'Cloudy': '☁️',
+                'Rainy': '🌧️',
+                'Stormy': '⛈️',
+                'Snowy': '❄️',
+                'Foggy': '🌫️',
+                'Windy': '💨'
+            };
+            return icons[weather] || '🌤️';
+        }
+
+        function getSeasonIcon(season) {
+            const icons = {
+                'Spring': '🌸',
+                'Summer': '☀️',
+                'Autumn': '🍂',
+                'Fall': '🍂',
+                'Winter': '❄️'
+            };
+            return icons[season] || '🌿';
         }
 
         // =====================================================================
@@ -4189,6 +4228,13 @@ Your ENTIRE response must be ONLY this JSON object.`;
                 questOffers: gameData.questOffers,
                 rollHistory: gameData.rollHistory,
                 hasOpening: gameData.hasOpening,
+                // Worldbuilding data
+                locationHistory: gameData.locationHistory,
+                npcs: gameData.npcs,
+                lore: gameData.lore,
+                factions: gameData.factions,
+                worldEvents: gameData.worldEvents,
+                playerNotes: gameData.playerNotes,
                 timestamp: new Date().toISOString()
             };
 
@@ -4223,6 +4269,13 @@ Your ENTIRE response must be ONLY this JSON object.`;
                     gameData.questOffers = imported.questOffers || [];
                     gameData.rollHistory = imported.rollHistory || [];
                     gameData.hasOpening = !!imported.hasOpening;
+                    // Import worldbuilding data
+                    gameData.locationHistory = imported.locationHistory || [];
+                    gameData.npcs = imported.npcs || [];
+                    gameData.lore = imported.lore || [];
+                    gameData.factions = imported.factions || [];
+                    gameData.worldEvents = imported.worldEvents || [];
+                    gameData.playerNotes = imported.playerNotes || [];
                     persistGame();
                     alert('Game loaded successfully!');
                     location.reload();
@@ -4385,6 +4438,11 @@ Your ENTIRE response must be ONLY this JSON object.`;
                     document.getElementById('itemModal')?.classList.add('hidden');
                     document.getElementById('questModal')?.classList.add('hidden');
                     document.getElementById('helpModal')?.classList.add('hidden');
+                    document.getElementById('locationModal')?.classList.add('hidden');
+                    document.getElementById('npcModal')?.classList.add('hidden');
+                    document.getElementById('loreModal')?.classList.add('hidden');
+                    document.getElementById('factionModal')?.classList.add('hidden');
+                    document.getElementById('addNoteModal')?.classList.add('hidden');
                     break;
             }
         });
@@ -4435,6 +4493,122 @@ Your ENTIRE response must be ONLY this JSON object.`;
 
             return true;
         }
+
+        // =====================================================================
+        // WORLDBUILDING EVENT LISTENERS
+        // =====================================================================
+
+        // Tab switching for World Knowledge panel
+        document.querySelectorAll('.world-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active from all tabs
+                document.querySelectorAll('.world-tab').forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+
+                // Remove active from all content panels
+                document.querySelectorAll('.world-tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+
+                // Add active to clicked tab
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+
+                // Show corresponding content
+                const tabName = tab.dataset.tab;
+                const content = document.getElementById(`tab-${tabName}`);
+                if (content) {
+                    content.classList.add('active');
+                }
+            });
+        });
+
+        // Location modal handlers
+        document.getElementById('locationModalClose')?.addEventListener('click', () => {
+            document.getElementById('locationModal').classList.add('hidden');
+        });
+
+        document.getElementById('locationModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'locationModal') {
+                document.getElementById('locationModal').classList.add('hidden');
+            }
+        });
+
+        // NPC modal handlers
+        document.getElementById('npcModalClose')?.addEventListener('click', () => {
+            document.getElementById('npcModal').classList.add('hidden');
+        });
+
+        document.getElementById('npcModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'npcModal') {
+                document.getElementById('npcModal').classList.add('hidden');
+            }
+        });
+
+        // Lore modal handlers
+        document.getElementById('loreModalClose')?.addEventListener('click', () => {
+            document.getElementById('loreModal').classList.add('hidden');
+        });
+
+        document.getElementById('loreModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'loreModal') {
+                document.getElementById('loreModal').classList.add('hidden');
+            }
+        });
+
+        // Faction modal handlers
+        document.getElementById('factionModalClose')?.addEventListener('click', () => {
+            document.getElementById('factionModal').classList.add('hidden');
+        });
+
+        document.getElementById('factionModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'factionModal') {
+                document.getElementById('factionModal').classList.add('hidden');
+            }
+        });
+
+        // Add Note modal handlers
+        document.getElementById('addNoteBtn')?.addEventListener('click', () => {
+            document.getElementById('addNoteModal').classList.remove('hidden');
+            document.getElementById('noteTitle').value = '';
+            document.getElementById('noteContent').value = '';
+            document.getElementById('noteCategory').value = 'general';
+        });
+
+        document.getElementById('addNoteModalClose')?.addEventListener('click', () => {
+            document.getElementById('addNoteModal').classList.add('hidden');
+        });
+
+        document.getElementById('addNoteModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'addNoteModal') {
+                document.getElementById('addNoteModal').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('saveNoteBtn')?.addEventListener('click', () => {
+            const title = document.getElementById('noteTitle').value.trim();
+            const content = document.getElementById('noteContent').value.trim();
+            const category = document.getElementById('noteCategory').value;
+
+            if (!title || !content) {
+                alert('Please enter both a title and content for your note.');
+                return;
+            }
+
+            const now = gameData.gameState.worldTime;
+            gameData.playerNotes.push({
+                title,
+                content,
+                category,
+                createdAt: `Day ${now.day}, ${now.hour}:00`
+            });
+
+            updateNotesList();
+            persistGame();
+            document.getElementById('addNoteModal').classList.add('hidden');
+        });
 
         // Bootstrapping
         console.log('Starting bootstrap...');
