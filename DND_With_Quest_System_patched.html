@@ -984,6 +984,10 @@ textarea:focus {
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Begin Adventure</button>
             </form>
+
+            <div style="text-align: center; margin-top: 1rem;">
+                <button id="resetApiKeyCharScreen" class="btn btn-secondary" style="font-size: 0.875rem;">🔑 Reset API Key</button>
+            </div>
         </div>
     </div>
 
@@ -993,6 +997,7 @@ textarea:focus {
             <div class="spinner"></div>
             <p style="font-size: 1.125rem; color: var(--slate-300); margin-top: 1rem;">Preparing your adventure...</p>
             <p style="font-size: 0.875rem; color: var(--slate-400); margin-top: 0.5rem;">Generating starting equipment and currency based on your backstory</p>
+            <button id="resetApiKeyInitScreen" class="btn btn-secondary" style="margin-top: 1.5rem; font-size: 0.875rem;">🔑 Reset API Key</button>
         </div>
     </div>
 
@@ -1010,6 +1015,7 @@ textarea:focus {
                         <div id="saveMenu" class="save-menu hidden">
                             <button id="exportBtn">📥 Export Save</button>
                             <button id="importBtn">📤 Import Save</button>
+                            <button id="resetApiKeyGameScreen">🔑 Reset API Key</button>
                             <button id="newGameBtn" class="btn-danger" style="margin-top: 0.5rem; background-color: var(--red-600);">🔄 New Game</button>
                         </div>
                     </div>
@@ -3495,6 +3501,31 @@ Your ENTIRE response must be ONLY this JSON object.`;
                 location.reload();
             }
         });
+
+        // Reset API Key functionality
+        function resetApiKey() {
+            if (confirm('Are you sure you want to reset your API key? You will need to re-enter your API credentials.')) {
+                // Only clear the API config, preserve other data
+                localStorage.removeItem('dnd_api_config');
+                location.reload();
+            }
+        }
+
+        // Add event listeners for reset API key buttons
+        const resetApiKeyCharScreenBtn = document.getElementById('resetApiKeyCharScreen');
+        if (resetApiKeyCharScreenBtn) {
+            resetApiKeyCharScreenBtn.addEventListener('click', resetApiKey);
+        }
+
+        const resetApiKeyInitScreenBtn = document.getElementById('resetApiKeyInitScreen');
+        if (resetApiKeyInitScreenBtn) {
+            resetApiKeyInitScreenBtn.addEventListener('click', resetApiKey);
+        }
+
+        const resetApiKeyGameScreenBtn = document.getElementById('resetApiKeyGameScreen');
+        if (resetApiKeyGameScreenBtn) {
+            resetApiKeyGameScreenBtn.addEventListener('click', resetApiKey);
+        }
 
         // =====================================================================
         // NEW FEATURES: AUTO-SAVE, SEARCH, KEYBOARD SHORTCUTS
