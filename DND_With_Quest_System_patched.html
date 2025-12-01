@@ -952,6 +952,14 @@ textarea:focus {
                     </select>
                 </div>
 
+                <div class="input-group">
+                    <label>Custom Story/Roleplay Description (Optional)</label>
+                    <textarea id="customStory" rows="3" placeholder="Describe the specific type of story or roleplay you want (e.g., 'A mystery investigation in a magical academy', 'Political intrigue in a desert kingdom', etc.)"></textarea>
+                    <p style="font-size: 0.75rem; color: var(--slate-400); margin-top: 0.25rem;">
+                        This will guide the AI to create your desired narrative experience
+                    </p>
+                </div>
+
                 <div class="grid grid-cols-2">
                     <div class="input-group">
                         <label>Tone</label>
@@ -2735,7 +2743,7 @@ ADVENTURE PREFERENCES:
 - Setting: ${prefs.setting}
 - Tone: ${prefs.tone}
 - Difficulty: ${prefs.difficulty}
-- Pacing: ${prefs.pacing}
+- Pacing: ${prefs.pacing}${prefs.customStory ? `\n- Custom Story/Roleplay: ${prefs.customStory}` : ''}
 
 IMPORTANT CREATIVE GUIDELINES:
 ❌ ABSOLUTELY FORBIDDEN NAMES - These names are BANNED and will be automatically rejected:
@@ -3286,6 +3294,7 @@ Your ENTIRE response must be ONLY this JSON object.`;
 
             gameData.adventurePreferences = {
                 setting: document.getElementById('setting').value,
+                customStory: document.getElementById('customStory').value.trim(),
                 tone: document.getElementById('tone').value,
                 difficulty: document.getElementById('difficulty').value,
                 pacing: document.getElementById('pacing').value
